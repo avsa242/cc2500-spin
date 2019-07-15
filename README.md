@@ -1,23 +1,35 @@
 # cc2500-spin 
----------------
+-------------
 
-This is a P8X32A/Propeller [driver] object for ____.
+This is a P8X32A/Propeller driver object for the TI CC2500 2.4GHz ISM-band transceiver chip.
 
 ## Salient Features
 
-* Feature 1
-* Feature 2
+* SPI connection at 1MHz
+* Supports setting carrier frequency from 2,400,000kHz to 2,483,500kHz
+* Supports on-air baud rates from 1.2kbps to 500kbps
+* Supports 2FSK, 4FSK, GFSK, MSK, ASK/OOK modulation
+* Supports manchester encoding/decoding
+* Supports on-chip CRC calculation/checking
+* Supports Forward Error Correction (FEC)
+* Supports setting intermediate frequency (IF) from 25kHz to 787kHz (5-bit resolution)
+* Supports LNA gain control
+* Supports arbitrary packet lengths
+* Supports configurable number of preamble bytes
+* Supports syncword configuration
+* Supports data whitening
 
 ## Requirements
 
-* Requirement 1
+* 1 extra core/cog for the PASM SPI driver
 
 ## Limitations
 
-* Limitation 1
-* Limitation 2
+* TX deviation only partially implemented
+* Many chip functions untested
+* Driver very early in development - may malfunction or outright fail to build
 
 ## TODO
 
-* Task item 1
-* Task item 2
+- [ ] Implement & verify TX deviation functionality
+- [ ] Verify RSSI functionality
