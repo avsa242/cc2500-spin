@@ -177,6 +177,27 @@ PUB AddressCheck(mode) | tmp
     tmp := (tmp | mode) & core#PKTCTRL1_MASK
     writeRegX (core#PKTCTRL1, 1, @tmp)
 
+PUB AfterRX(next_state) | tmp
+' Defines the state the radio transitions to after a packet is successfully received
+'   Valid values:
+'       RXOFF_IDLE (0) - Idle state
+'       RXOFF_FSTXON (1) - Turn frequency synth on and ready at TX freq. To transmit, call TX
+'       RXOFF_TX (2) - Start sending preamble
+'       RXOFF_RX (3) - Wait for more packets
+'   Any other value polls the chip and returns the current setting
+    readRegX (core#MCSM1, 1, @tmp)
+    case next_state
+        0..3:
+            next_state := next_state << core#FLD_RXOFF_MODE
+        OTHER:
+            result := (tmp >> core#FLD_RXOFF_MODE) & core#BITS_RXOFF_MODE
+            return result
+
+    tmp &= core#MASK_RXOFF_MODE
+    tmp := (tmp | next_state)
+    writeRegX (core#MCSM1, 1, @tmp)
+
+
 PUB AppendStatus(enabled) | tmp
 ' Append status bytes to packet payload (RSSI, LQI, CRC OK)
 '   Valid values:
@@ -815,26 +836,6 @@ PUB RXFIFOThresh(threshold) | tmp
     tmp &= core#MASK_FIFO_THR
     tmp := (tmp | threshold) & core#FIFOTHR_MASK
     writeRegX (core#FIFOTHR, 1, @tmp)
-
-PUB RXOff(next_state) | tmp
-' Defines the state the radio transitions to after a packet is successfully received
-'   Valid values:
-'       RXOFF_IDLE (0) - Idle state
-'       RXOFF_FSTXON (1) - Turn frequency synth on and ready at TX freq. To transmit, call TX
-'       RXOFF_TX (2) - Start sending preamble
-'       RXOFF_RX (3) - Wait for more packets
-'   Any other value polls the chip and returns the current setting
-    readRegX (core#MCSM1, 1, @tmp)
-    case next_state
-        0..3:
-            next_state := next_state << core#FLD_RXOFF_MODE
-        OTHER:
-            result := (tmp >> core#FLD_RXOFF_MODE) & core#BITS_RXOFF_MODE
-            return result
-
-    tmp &= core#MASK_RXOFF_MODE
-    tmp := (tmp | next_state)
-    writeRegX (core#MCSM1, 1, @tmp)
 
 PUB Sleep
 ' Power down chip
