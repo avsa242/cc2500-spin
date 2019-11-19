@@ -106,7 +106,7 @@ PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_DELAY, SCK_CPOL): okay
 
             outa[_CS] := 1
             dira[_CS] := 1
-            if PartNumber == $80                                   'Poll chip for version
+            if lookdown(ChipID: $14)                                   'Poll chip for version
                 return okay
 
     return FALSE                                                'If we got here, something went wrong
@@ -357,6 +357,12 @@ PUB Channel(number) | tmp
 
     number &= core#CHANNR_MASK
     writeRegX (core#CHANNR, 1, @number)
+
+PUB ChipID
+' Chip version number
+'   Returns: $14
+'   NOTE: Datasheet states this value is subject to change without notice
+    readRegX (core#VERSION, 1, @result)
 
 PUB CRCCheck(enabled) | tmp
 ' Enable CRC calc (TX) and check (RX)
@@ -912,12 +918,6 @@ PUB TXData(nr_bytes, buf_addr)
 '   nr_bytes Valid values: 1..64
 '   Any other value is ignored
     writeRegX (core#FIFO, nr_bytes, buf_addr)
-
-PUB Version
-' Chip version number
-'   Returns: $14
-'   NOTE: Datasheet states this value is subject to change without notice
-    readRegX (core#VERSION, 1, @result)
 
 PUB WhiteData(enabled) | tmp
 ' Enable data whitening
