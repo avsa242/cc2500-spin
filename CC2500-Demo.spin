@@ -34,6 +34,11 @@ CON
 
     LED             = cfg#LED1
 
+    FACT            = 1_000
+    NUM             = 10.324440615384615 * float(FACT)
+    SUB256          = 256 * FACT
+    MIN0_5          = 0.5 * float(FACT)
+
 OBJ
 
     cfg : "core.con.boardcfg.flip"
@@ -41,6 +46,7 @@ OBJ
     time: "time"
     rf  : "wireless.transceiver.cc2500.spi"
     int : "string.integer"
+    u64 : "math.unsigned64"
 
 VAR
 
@@ -50,7 +56,7 @@ VAR
     byte _addr
     byte _pktlen
 
-PUB Main
+PUB Main | drate_e, drate_m, baud
 
     dira[23] := 0
     outa[23] := 0
@@ -60,6 +66,12 @@ PUB Main
 '    ser.Hex(rf.CarrierFreq(2_483_500), 8)
 '    time.sleep(2)
 '    Flash(LED, 100)
+    ser.dec(rf.DataRate(-2))
+    ser.newline
+    rf.DataRate(500_000)
+    ser.dec(rf.DataRate(-2))
+    ser.newline
+    repeat
 
     repeat
         ser.Str (string("Choose role (1 = TX, 2 = RX)"))

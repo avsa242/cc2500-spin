@@ -18,6 +18,7 @@ This is a P8X32A/Propeller driver object for the TI CC2500 2.4GHz ISM-band trans
 * Supports configurable number of preamble bytes
 * Supports syncword configuration
 * Supports data whitening
+* Supports address checking
 
 ## Requirements
 

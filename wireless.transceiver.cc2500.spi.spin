@@ -13,6 +13,7 @@
 CON
 
     F_XOSC                  = 26_000_000        ' CC1101 XTAL Oscillator freq, in Hz
+    F_XOSC_MHZ              = F_XOSC / 1_000_000
     SIXT                    = 1 << 16           ' 2^16
     UM_FACT                 = 1_000_000     ' Scale to use in unsigned math object
     UM_FREQ_RES             = 396_728515        '(F_XOSC / SIXT) * 1_000_000
@@ -85,7 +86,7 @@ OBJ
     spi     : "com.spi.4w"                                             'PASM SPI Driver
     core    : "core.con.cc2500"
     time    : "time"                                                'Basic timing functions
-    umath   : "umath"
+    umath   : "math.unsigned64"
 
 PUB Null
 ''This is not a top-level object
@@ -114,6 +115,35 @@ PUB Stop
 
     spi.stop
 
+PUB Defaults
+
+    Address($00)
+    AddressCheck(ADRCHK_NONE)
+    AppendStatus(TRUE)
+    CarrierFreq(2_463_999)
+    Channel(0)
+    CRCAutoFlush(FALSE)
+    CRCCheck(TRUE)
+    DataRate(115_200)
+    DCBlock(TRUE)
+    Deviation(47_607)
+    FEC(FALSE)
+    GDO0(IO_CLK_XODIV192)
+    GDO1(IO_HI_Z)
+    GDO2(IO_CHIP_RDYn)
+    IntFreq(381)
+    ManchesterEnc(FALSE)
+    Modulation(FSK2)
+    PacketLen(255)
+    PacketLenCfg(PKTLEN_VAR)
+    Preamble(2)
+    PreambleQual(0)
+    RXBandwidth(203)
+    RXFIFOThresh(32)
+    SyncMode(SYNCMODE_1616)
+    SyncWord($D391)
+    WhiteData(TRUE)
+
 PUB Address(addr) | tmp
 ' Set address used for packet filtration
 '   Valid values: $00..$FF (000-255)
@@ -131,7 +161,7 @@ PUB Address(addr) | tmp
 PUB AddressCheck(check) | tmp
 ' Short descr
 '   Valid values:
-'       ADRCHK_NONE (0): No address check
+'      *ADRCHK_NONE (0): No address check
 '       ADRCHK_CHK_NO_BCAST (1): Check address, but ignore broadcast addresses
 '       ADRCHK_CHK_00_BCAST (2): Check address, and also respond to $00 broadcast address
 '       ADRCHK_CHK_00_FF_BCAST (3): Check address, and also respond to both $00 and $FF broadcast addresses
@@ -330,21 +360,34 @@ PUB CrystalOff
 
 PUB DataRate(Baud) | tmp, tmp_e, tmp_m, DRATE_E, DRATE_M
 ' Set on-air data rate, in bps
-'   Valid values: 1000, 1200, 2400, 4800, 9600, 19_600, 38_400, 76_800, 153_600, 250_000, 500_000
+'   Valid values: 1200, 2400, 4800, 9600, 19_600, 38_400, 76_800, 115_200, 153_600, 250_000, 500_000
 '   Any other value polls the chip and returns the current setting
     tmp := tmp_e := tmp_m := DRATE_E := DRATE_M := 0
 
     readRegX (core#MDMCFG4, 1, @tmp_e)
     readRegX (core#MDMCFG3, 1, @tmp_m)
-    case Baud := lookdown(Baud: 1000, 1200, 2048, 2400, 4096, 4800, 9600, 19_600, 38_400, 76_800, 153_600, 250_000, 500_000)
+    case Baud := lookdown(Baud: 1200, 2048, 2400, 4096, 4800, 9600, 19_600, 38_400, 76_800, 115_200, 153_600, 250_000, 500_000)
         1..13:
-            DRATE_E := lookup(Baud: $05, $05, $06, $06, $07, $07, $08, $09, $0A, $0B, $0C, $0D, $0E) & core#BITS_DRATE_E
-            DRATE_M := lookup(Baud: $42, $83, $4A, $83, $4A, $83, $83, $8B, $83, $83, $83, $3B, $3B) & core#MDMCFG3_MASK
+            DRATE_E := lookup(Baud: $05, $06, $06, $07, $07, $08, $09, $0A, $0B, $0C, $0C, $0D, $0E) & core#BITS_DRATE_E
+            DRATE_M := lookup(Baud: $83, $4A, $83, $4A, $83, $83, $8B, $83, $83, $22, $83, $3B, $3B) & core#MDMCFG3_MASK
+{
+    case Baud
+        1200..500_000:
+            repeat DRATE_E from 0 to 15
+                DRATE_M := ( umath.MultDiv(Baud, 268435456, 1_000_000) / (F_XOSC_MHZ * (1 << DRATE_E)) ) - 256
+                if DRATE_M < 256
+                    quit
+i}
         OTHER:
             tmp_e &= core#BITS_DRATE_E
+{
+            result := umath.MultDiv ((256+tmp_m), (1 << tmp_e)*1_000_000, 268_435_456)
+            result := result * F_XOSC_MHZ
+            return
+}
             tmp := (tmp_e << 8) | tmp_m
-            result := lookdown(tmp: $0542, $0583, $0683, $0783, $0883, $098B, $0A83, $0B83, $0C83, $0D3B, $0E3B)
-            return lookup(result: 1000, 1200, 2400, 4800, 9600, 19_600, 38_400, 76_800, 153_600, 250_000, 500_000)
+            result := lookdown(tmp: $0583, $0683, $0783, $0883, $098B, $0A83, $0B83, $0C83, $0D3B, $0E3B)
+            return lookup(result: 1200, 2400, 4800, 9600, 19_600, 38_400, 76_800, 153_600, 250_000, 500_000)
 
     tmp_e &= core#MASK_DRATE_E
     tmp_e := (tmp_e | DRATE_E)
