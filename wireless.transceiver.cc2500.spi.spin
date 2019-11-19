@@ -344,19 +344,19 @@ PUB CarrierSenseAbs(threshold) | tmp
     tmp := (tmp | threshold) & core#AGCTRL1_MASK
     writeRegX (core#AGCTRL1, 1, @tmp)
 
-PUB Channel(chan) | tmp
+PUB Channel(number) | tmp
 ' Set device channel number
 '   Resulting frequency is the channel number multiplied by the channel spacing setting, added to the base frequency
 '   Valid values: 0..255
 '   Any other value polls the chip and returns the current setting
     readRegX (core#CHANNR, 1, @tmp)
-    case chan
+    case number
         0..255:
         OTHER:
             return tmp
 
-    chan &= core#CHANNR_MASK
-    writeRegX (core#CHANNR, 1, @chan)
+    number &= core#CHANNR_MASK
+    writeRegX (core#CHANNR, 1, @number)
 
 PUB CRCCheck(enabled) | tmp
 ' Enable CRC calc (TX) and check (RX)
