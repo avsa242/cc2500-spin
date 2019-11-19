@@ -158,8 +158,8 @@ PUB Address(addr) | tmp
     addr &= core#ADDR_MASK
     writeRegX (core#ADDR, 1, @addr)
 
-PUB AddressCheck(check) | tmp
-' Short descr
+PUB AddressCheck(mode) | tmp
+' Enable address checking/matching/filtering
 '   Valid values:
 '      *ADRCHK_NONE (0): No address check
 '       ADRCHK_CHK_NO_BCAST (1): Check address, but ignore broadcast addresses
@@ -167,14 +167,14 @@ PUB AddressCheck(check) | tmp
 '       ADRCHK_CHK_00_FF_BCAST (3): Check address, and also respond to both $00 and $FF broadcast addresses
 '   Any other value polls the chip and returns the current setting
     readRegX (core#PKTCTRL1, 1, @tmp)
-    case check
+    case mode
         0..3:
-            check := check & core#BITS_ADR_CHK
+            mode := mode & core#BITS_ADR_CHK
         OTHER:
             return tmp & core#BITS_ADR_CHK
 
     tmp &= core#MASK_ADR_CHK
-    tmp := (tmp | check) & core#PKTCTRL1_MASK
+    tmp := (tmp | mode) & core#PKTCTRL1_MASK
     writeRegX (core#PKTCTRL1, 1, @tmp)
 
 PUB AppendStatus(enabled) | tmp
