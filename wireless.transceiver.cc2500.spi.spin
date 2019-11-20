@@ -441,6 +441,23 @@ i}
     writeRegX (core#MDMCFG4, 1, @tmp_e)
     writeRegX (core#MDMCFG3, 1, @DRATE_M)
 
+PUB DataWhitening(enabled) | tmp
+' Enable data whitening
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value polls the chip and returns the current setting
+'   NOTE: Applies to all data, except the preamble and sync word.
+    readRegX (core#PKTCTRL0, 1, @tmp)
+    case ||enabled
+        0, 1:
+            enabled := (||enabled) << core#FLD_WHITE_DATA
+        OTHER:
+            result := ((tmp >> core#FLD_WHITE_DATA) & %1) * TRUE
+            return result
+
+    tmp &= core#MASK_WHITE_DATA
+    tmp := (tmp | enabled)
+    writeRegX (core#PKTCTRL0, 1, @tmp)
+
 PUB DCBlock(enabled) | tmp
 ' Enable digital DC blocking filter (before demod)
 '   Valid values: TRUE (-1 or 1), FALSE
@@ -918,23 +935,6 @@ PUB TXData(nr_bytes, buf_addr)
 '   nr_bytes Valid values: 1..64
 '   Any other value is ignored
     writeRegX (core#FIFO, nr_bytes, buf_addr)
-
-PUB WhiteData(enabled) | tmp
-' Enable data whitening
-'   Valid values: TRUE (-1 or 1), FALSE (0)
-'   Any other value polls the chip and returns the current setting
-'   NOTE: Applies to all data, except the preamble and sync word.
-    readRegX (core#PKTCTRL0, 1, @tmp)
-    case ||enabled
-        0, 1:
-            enabled := (||enabled) << core#FLD_WHITE_DATA
-        OTHER:
-            result := ((tmp >> core#FLD_WHITE_DATA) & %1) * TRUE
-            return result
-
-    tmp &= core#MASK_WHITE_DATA
-    tmp := (tmp | enabled)
-    writeRegX (core#PKTCTRL0, 1, @tmp)
 
 PUB WOR
 ' Change chip state to WOR (Wake-on-Radio)
