@@ -621,7 +621,7 @@ PUB FSTX
 ' Enable frequency synthesizer and calibrate
     writeRegX (core#CS_SFSTXON, 0, 0)
 
-PUB GDO0(config) | tmp
+PUB GPIO0(config) | tmp
 ' Configure test signal output on GD0 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F
 '   Any other value polls the chip and returns the current setting
@@ -639,7 +639,7 @@ PUB GDO0(config) | tmp
     tmp := (tmp | config)
     writeRegX (core#IOCFG0, 1, @tmp)
 
-PUB GDO1(config) | tmp
+PUB GPIO1(config) | tmp
 ' Configure test signal output on GD0 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F
 '   Any other value polls the chip and returns the current setting
@@ -656,7 +656,7 @@ PUB GDO1(config) | tmp
     tmp := (tmp | config)
     writeRegX (core#IOCFG1, 1, @tmp)
 
-PUB GDO2(config) | tmp
+PUB GPIO2(config) | tmp
 ' Configure test signal output on GD0 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F
 '   Any other value polls the chip and returns the current setting
