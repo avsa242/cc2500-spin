@@ -136,7 +136,7 @@ PUB Defaults
     Modulation(FSK2)
     PayloadLen(255)
     PayloadLenCfg(PKTLEN_VAR)
-    Preamble(2)
+    PreambleLen(2)
     PreambleQual(0)
     RXBandwidth(203)
     RXFIFOThresh(32)
@@ -814,7 +814,7 @@ PUB PayloadLenCfg(mode) | tmp
     writeRegX (core#PKTCTRL0, 1, @tmp)
 
 
-PUB Preamble(bytes) | tmp
+PUB PreambleLen(bytes) | tmp
 ' Set number of preamble bytes
 '   Valid values: 2, 3, 4, 6, 8, 12, 16, 24
 '   Any other value polls the chip and returns the current setting
