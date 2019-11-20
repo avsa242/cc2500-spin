@@ -134,8 +134,8 @@ PUB Defaults
     IntFreq(381)
     ManchesterEnc(FALSE)
     Modulation(FSK2)
-    PacketLen(255)
-    PacketLenCfg(PKTLEN_VAR)
+    PayloadLen(255)
+    PayloadLenCfg(PKTLEN_VAR)
     Preamble(2)
     PreambleQual(0)
     RXBandwidth(203)
@@ -767,37 +767,6 @@ PUB NodeAddress(addr) | tmp
     addr &= core#ADDR_MASK
     writeRegX (core#ADDR, 1, @addr)
 
-PUB PacketLen(length) | tmp
-' Set packet length, when using fixed packet length mode,
-'   or maximum packet length when using variable packet length mode.
-'   Valid values: 1..255
-'   Any other value polls the chip and returns the current setting
-    readRegX (core#PKTLEN, 1, @tmp)
-    case length
-        1..255:
-            length &= core#PKTLEN_MASK
-        OTHER:
-            return tmp & core#PKTLEN_MASK
-
-    writeRegX (core#PKTLEN, 1, @length)
-
-PUB PacketLenCfg(mode) | tmp
-' Set packet length mode
-'   Valid values:
-'       PKTLEN_FIXED (0): Fixed packet length mode. Set length with PacketLen
-'      *PKTLEN_VAR (1): Variable packet length mode. Packet length set by first byte after sync word
-'       PKTLEN_INF (2): Infinite packet length mode.
-'   Any other value polls the chip and returns the current setting
-    readRegX (core#PKTCTRL0, 1, @tmp)
-    case mode
-        0..2:
-        OTHER:
-            return tmp & core#BITS_LENGTH_CONFIG
-
-    tmp &= core#MASK_LENGTH_CONFIG
-    tmp := (tmp | mode) & core#PKTCTRL0_MASK
-    writeRegX (core#PKTCTRL0, 1, @tmp)
-
 PUB PartNumber
 ' Part number of device
 '   Returns: $00
@@ -812,6 +781,38 @@ PUB PAWrite(buf_addr)
 ' Write 8-byte PA table from buf_addr
 '   NOTE: Table will be written starting at index 0 from the LSB of buf_addr
     writeRegX (core#PATABLE | core#BURST, 8, buf_addr)
+
+PUB PayloadLen(length) | tmp
+' Set payload length, when using fixed payload length mode,
+'   or maximum payload length when using variable payload length mode.
+'   Valid values: 1..255
+'   Any other value polls the chip and returns the current setting
+    readRegX (core#PKTLEN, 1, @tmp)
+    case length
+        1..255:
+            length &= core#PKTLEN_MASK
+        OTHER:
+            return tmp & core#PKTLEN_MASK
+
+    writeRegX (core#PKTLEN, 1, @length)
+
+PUB PayloadLenCfg(mode) | tmp
+' Set payload length mode
+'   Valid values:
+'       PKTLEN_FIXED (0): Fixed payload length mode. Set length with PayloadLen
+'      *PKTLEN_VAR (1): Variable payload length mode. Payload length set by first byte after sync word
+'       PKTLEN_INF (2): Infinite payload length mode.
+'   Any other value polls the chip and returns the current setting
+    readRegX (core#PKTCTRL0, 1, @tmp)
+    case mode
+        0..2:
+        OTHER:
+            return tmp & core#BITS_LENGTH_CONFIG
+
+    tmp &= core#MASK_LENGTH_CONFIG
+    tmp := (tmp | mode) & core#PKTCTRL0_MASK
+    writeRegX (core#PKTCTRL0, 1, @tmp)
+
 
 PUB Preamble(bytes) | tmp
 ' Set number of preamble bytes
