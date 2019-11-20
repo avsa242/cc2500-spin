@@ -117,7 +117,7 @@ PUB Stop
 
 PUB Defaults
 
-    Address($00)
+    NodeAddress($00)
     AddressCheck(ADRCHK_NONE)
     AppendStatus(TRUE)
     CarrierFreq(2_463_999)
@@ -128,9 +128,9 @@ PUB Defaults
     DCBlock(TRUE)
     Deviation(47_607)
     FEC(FALSE)
-    GDO0(IO_CLK_XODIV192)
-    GDO1(IO_HI_Z)
-    GDO2(IO_CHIP_RDYn)
+    GPIO0(IO_CLK_XODIV192)
+    GPIO1(IO_HI_Z)
+    GPIO2(IO_CHIP_RDYn)
     IntFreq(381)
     ManchesterEnc(FALSE)
     Modulation(FSK2)
@@ -142,21 +142,7 @@ PUB Defaults
     RXFIFOThresh(32)
     SyncMode(SYNCMODE_1616)
     SyncWord($D391)
-    WhiteData(TRUE)
-
-PUB Address(addr) | tmp
-' Set address used for packet filtration
-'   Valid values: $00..$FF (000-255)
-'   Any other value polls the chip and returns the current setting
-'   NOTE: $00 and $FF can be used as broadcast addresses.
-    readRegX (core#ADDR, 1, @tmp)
-    case addr
-        $00..$FF:
-        OTHER:
-            return tmp
-
-    addr &= core#ADDR_MASK
-    writeRegX (core#ADDR, 1, @addr)
+    DataWhitening(TRUE)
 
 PUB AddressCheck(mode) | tmp
 ' Enable address checking/matching/filtering
@@ -702,15 +688,15 @@ PUB LNAGain(dB) | tmp
 '       -17 - ~17.1dB below maximum
 '   Any other value polls the chip and returns the current setting
     readRegX (core#AGCTRL2, 1, @tmp)
-    case gain
+    case dB
         0, -2, -6, -7, -9, -11, -14, -17:
-            gain := lookdownz(gain: 0, -2, -6, -7, -9, -11, -14, -17) << core#FLD_MAX_LNA_GAIN
+            dB := lookdownz(dB: 0, -2, -6, -7, -9, -11, -14, -17) << core#FLD_MAX_LNA_GAIN
         OTHER:
             result := (tmp >> core#FLD_MAX_LNA_GAIN) & core#BITS_MAX_LNA_GAIN
             return lookupz(result: 0, -2, -6, -7, -9, -11, -14, -17)
 
     tmp &= core#MASK_MAX_LNA_GAIN
-    tmp := (tmp | gain)
+    tmp := (tmp | dB)
     writeRegX (core#AGCTRL2, 1, @tmp)
 
 PUB MagnTarget(val) | tmp
@@ -746,7 +732,7 @@ PUB ManchesterEnc(enabled) | tmp
     tmp := (tmp | enabled)
     writeRegX (core#MDMCFG2, 1, @tmp)
 
-PUB Modulation(format) | tmp
+PUB Modulation(type) | tmp
 ' Set modulation of transmitted or expected signal
 '   Valid values:
 '       FSK2 (%000): 2-level or binary Frequency Shift-Keyed
@@ -757,15 +743,29 @@ PUB Modulation(format) | tmp
 '   Any other value polls the chip and returns the current setting
 '   NOTE: MSK supported only at baud rates greater than 26k
     readRegX (core#MDMCFG2, 1, @tmp)
-    case format
+    case type
         FSK2, GFSK, ASKOOK, FSK4, MSK:
-            format := format << core#FLD_MOD_FORMAT
+            type := type << core#FLD_MOD_FORMAT
         OTHER:
             return (tmp >> core#FLD_MOD_FORMAT) & core#BITS_MOD_FORMAT
 
     tmp &= core#MASK_MOD_FORMAT
-    tmp := (tmp | format)
+    tmp := (tmp | type)
     writeRegX (core#MDMCFG2, 1, @tmp)
+
+PUB NodeAddress(addr) | tmp
+' Set address used for packet filtration
+'   Valid values: $00..$FF (000-255)
+'   Any other value polls the chip and returns the current setting
+'   NOTE: $00 and $FF can be used as broadcast addresses.
+    readRegX (core#ADDR, 1, @tmp)
+    case addr
+        $00..$FF:
+        OTHER:
+            return tmp
+
+    addr &= core#ADDR_MASK
+    writeRegX (core#ADDR, 1, @addr)
 
 PUB PacketLen(length) | tmp
 ' Set packet length, when using fixed packet length mode,
