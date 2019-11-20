@@ -123,7 +123,7 @@ PUB Defaults
     CarrierFreq(2_463_999)
     Channel(0)
     CRCAutoFlush(FALSE)
-    CRCCheck(TRUE)
+    CRCCheckEnabled(TRUE)
     DataRate(115_200)
     DCBlock(TRUE)
     Deviation(47_607)
@@ -364,7 +364,7 @@ PUB ChipID
 '   NOTE: Datasheet states this value is subject to change without notice
     readRegX (core#VERSION, 1, @result)
 
-PUB CRCCheck(enabled) | tmp
+PUB CRCCheckEnabled(enabled) | tmp
 ' Enable CRC calc (TX) and check (RX)
 '   Valid values:
 '      *TRUE (-1 or 1)
