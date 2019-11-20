@@ -859,10 +859,6 @@ PUB RSSI
     else
         result := (result / 2) - 74
 
-PUB RX
-' Change chip state to RX (receive)
-    writeRegX (core#CS_SRX, 0, 0)
-
 PUB RXBandwidth(kHz) | tmp
 ' Set receiver channel filter bandwidth, in kHz
 '   Valid values: 812, 650, 541, 464, 406, 325, 270, 232, 203, 162, 135, 116, 102, 81, 68, 58
@@ -903,6 +899,10 @@ PUB RXFIFOThresh(threshold) | tmp
     tmp &= core#MASK_FIFO_THR
     tmp := (tmp | threshold) & core#FIFOTHR_MASK
     writeRegX (core#FIFOTHR, 1, @tmp)
+
+PUB RXMode
+' Change chip state to RX (receive)
+    writeRegX (core#CS_SRX, 0, 0)
 
 PUB Sleep
 ' Power down chip
