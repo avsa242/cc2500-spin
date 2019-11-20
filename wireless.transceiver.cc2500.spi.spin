@@ -593,6 +593,30 @@ PUB FlushTX
 '        OTHER:
 '            return
 
+PUB FreqDeviation(Hz) | tmp
+' Set frequency deviation from carrier, in Hz
+'   Valid values:
+'       1_586..380_859
+'       *47_607
+'   NOTE: This setting has no effect when Modulation format is ASK/OOK.
+'   NOTE: This setting applies to both TX and RX roles. When role is RX, setting must be
+'           approximately correct for reliable demodulation.
+'   Any other value polls the chip and returns the current setting
+    readRegX (core#DEVIATN, 1, @tmp)
+    case Hz
+        80000:
+            Hz := $55
+        1586..380859:
+'            freq := freq << core#FLD_FIELDNAME
+            Hz := $13
+        OTHER:
+            result := tmp & core#DEVIATN_MASK
+            return result
+
+    tmp := $00
+    tmp := (tmp | Hz)
+    writeRegX (core#DEVIATN, 1, @tmp)
+
 PUB FSTX
 ' Enable frequency synthesizer and calibrate
     writeRegX (core#CS_SFSTXON, 0, 0)
