@@ -1,7 +1,7 @@
 # cc2500-spin 
 -------------
 
-This is a P8X32A/Propeller driver object for the TI CC2500 2.4GHz ISM-band transceiver chip.
+This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the TI CC2500 2.4GHz ISM-band transceiver chip.
 
 ## Salient Features
 
