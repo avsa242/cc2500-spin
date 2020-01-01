@@ -46,20 +46,37 @@ PUB Main | choice
 
     cc2500.GPIO0 (cc2500#IO_HI_Z)                   ' Set CC2500 GPIO0 to Hi-Z mode
     cc2500.AutoCal(cc2500#IDLE_RXTX)                ' Perform auto-calibration when transitioning from Idle to RX
-    ser.str(string("Autocal setting: "))
-    ser.Dec(cc2500.AutoCal(-2))
-    ser.newline
-
     cc2500.Idle
     
     ser.str(string("Waiting for radio idle status..."))
     repeat until cc2500.State == 1
     ser.str(string("done", ser#CR, ser#LF))
 
-    cc2500.CarrierFreq(2_402_000)                   ' Set carrier frequency
+    cc2500.CarrierFreq(2_401_000)                   ' Set carrier frequency
+    ser.str(string("Carrier freq: "))
+    ser.dec(cc2500.CarrierFreq(-2))
+    ser.str(string("kHz", ser#CR, ser#LF))
+
     ser.str(string("Waiting for PLL lock..."))
     repeat until cc2500.PLLLocked == TRUE           ' Don't proceed until PLL is locked
     ser.str(string("done", ser#CR, ser#LF))
+
+    ser.str(string("Data rate: "))
+    ser.dec(cc2500.DataRate(-2))
+    ser.str(string("bps", ser#CR, ser#LF))
+
+    ser.str(string("Freq deviation: "))
+    ser.dec(cc2500.FreqDeviation(-2))
+    ser.str(string("Hz", ser#CR, ser#LF))
+
+    ser.str(string("RX Bandwidth: "))
+    ser.dec(cc2500.RXBandwidth(-2))
+    ser.str(string("kHz", ser#CR, ser#LF))
+
+
+    ser.str(string("Modulation: "))
+    ser.str(lookupz(cc2500.Modulation(-2): string("FSK2"), string("GFSK"), string("???"), string("ASK/OOK"), string("FSK4"), string("???"), string("???"), string("MSK")))
+    ser.Newline
 
     ser.str(string("Press any key to begin receiving", ser#CR, ser#LF))
     ser.CharIn
@@ -133,12 +150,7 @@ PUB Setup
         ser.str(string("CC2500 driver failed to start - halting", ser#CR, ser#LF))
         FlashLED (LED, 500)
 
-PUB FlashLED(led_pin, delay_ms)
-
-    io.Output(led_pin)
-    repeat
-        io.Toggle(led_pin)
-        time.MSleep(delay_ms)
+#include "lib.utility.spin"
 
 DAT
 ' Radio states
