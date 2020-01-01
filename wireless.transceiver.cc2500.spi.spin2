@@ -1,11 +1,11 @@
 {
     --------------------------------------------
-    Filename: wireless.transceiver.cc1101.spi.spin
+    Filename: wireless.transceiver.cc1101.spi.spin2
     Author: Jesse Burt
-    Description: Driver for TI's CC1101 ISM-band transceiver
+    Description: Driver for TI's CC1101 ISM-band transceiver (P2 version)
     Copyright (c) 2019
-    Started Jul 7, 2019
-    Updated Jul 7, 2019
+    Started Dec 31, 2019
+    Updated Dec 31, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -18,9 +18,11 @@ CON
     FOURTN                  = 1 << 14           ' 2^14
     SIXTN                   = 1 << 16           ' 2^16
     SEVENTN                 = 1 << 17           ' 2^17
+    EIGHTTN                 = 1 << 18           ' 2^18
     SIXT                    = 1 << 16           ' 2^16
-    UM_FACT                 = 1_000_000     ' Scale to use in unsigned math object
+    UM_FACT                 = 1_000_000         ' Scale to use in unsigned math object
     UM_FREQ_RES             = 396_728515        '(F_XOSC / SIXT) * 1_000_000
+    CHANSPC_RES             = F_XOSC / EIGHTTN  ' Resolution of channel spacing
 
 ' Auto-calibration state
     NEVER                   = 0
@@ -87,38 +89,41 @@ VAR
 
 OBJ
 
-    spi     : "com.spi.4w"                                             'PASM SPI Driver
+    spi     : "com.spi.bitbang"                                             'PASM SPI Driver
     core    : "core.con.cc2500"
+    io      : "io"
     time    : "time"                                                'Basic timing functions
     u64     : "math.unsigned64"
 
 PUB Null
 ''This is not a top-level object
 
-PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): okay
+'PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): okay
 
-    okay := Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, core#CLK_DELAY, core#CPOL)
+'    okay := Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, 1_000_000, core#CPOL)
 
-PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_DELAY, SCK_CPOL): okay
-    if SCK_DELAY => 1 and lookdown(SCK_CPOL: 0, 1)
-        if okay := spi.start (SCK_DELAY, SCK_CPOL)              'SPI Object Started?
-            time.MSleep (5)
-            _CS := CS_PIN
-            _MOSI := MOSI_PIN
-            _MISO := MISO_PIN
-            _SCK := SCK_PIN
+PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ): okay
+'    if lookdown(SCK_FREQ: 1..5_000_000)'core#SCK_MAX_FREQ)' and lookdown(SCK_CPOL: 0, 1)   ' xxx crashes compiler
+    if lookdown(CS_PIN: 0..63) and lookdown(SCK_PIN: 0..63) and lookdown(MOSI_PIN: 0..63) and lookdown(MISO_PIN: 0..63)
+        if SCK_FREQ => 1 and SCK_FREQ =< core#SCK_MAX_FREQ
+            if okay := spi.start (MOSI_PIN, MISO_PIN, SCK_PIN, SCK_FREQ)              'SPI Object Started?
+                time.MSleep (5)
+                _CS := CS_PIN
+                _MOSI := MOSI_PIN
+                _MISO := MISO_PIN
+                _SCK := SCK_PIN
 
-            outa[_CS] := 1
-            dira[_CS] := 1
-            if lookdown(DeviceID: $03)                                   'Poll chip for version
-                Reset
-                return okay
+                io.High(_CS)
+                io.Output(_CS)
+                if lookdown(DeviceID: $03)                                   'Poll chip for version
+                    Reset
+                    return okay
 
     return FALSE                                                'If we got here, something went wrong
 
 PUB Stop
 
-    spi.stop
+'
 
 PUB Defaults
 
@@ -357,6 +362,7 @@ PUB Channel(number) | tmp
 '   Resulting frequency is the channel number multiplied by the channel spacing setting, added to the base frequency
 '   Valid values: 0..255
 '   Any other value polls the chip and returns the current setting
+    tmp := $00
     readReg (core#CHANNR, 1, @tmp)
     case number
         0..255:
@@ -365,6 +371,26 @@ PUB Channel(number) | tmp
 
     number &= core#CHANNR_MASK
     writeReg (core#CHANNR, 1, @number)
+
+PUB ChannelSpacing(Hz=-2) | tmp, ch_interm, chanspc_e, chanspc_m
+' Set channel spacing/width, in Hz
+'   Valid values: 25390..405456
+'   Any other value polls the chip and returns the current setting
+    tmp := $00
+    readReg(core#MDMCFG1, 2, @tmp)
+    case Hz
+        25390..405456:
+            ch_interm := Hz / CHANSPC_RES
+            chanspc_e := log2( ((ch_interm) >> 8 {/ 256}) )
+            chanspc_m := (ch_interm / (1 << chanspc_e)) - 256
+        OTHER:
+            result := CHANSPC_RES * (256 + tmp.byte[1]) * (1 << tmp.byte[0])
+            return
+
+    tmp.byte[0] &= core#MASK_CHANSPC_E
+    tmp.byte[0] := (tmp.byte[0] | chanspc_e)
+    tmp.byte[1] := chanspc_m
+    writeReg(core#MDMCFG1, 2, @tmp)
 
 PUB CRCCheckEnabled(enabled) | tmp
 ' Enable CRC calc (TX) and check (RX)
@@ -735,6 +761,7 @@ PUB NodeAddress(addr) | tmp
 '   Valid values: $00..$FF (000-255)
 '   Any other value polls the chip and returns the current setting
 '   NOTE: $00 and $FF can be used as broadcast addresses.
+    tmp := $00
     readReg (core#ADDR, 1, @tmp)
     case addr
         $00..$FF:
@@ -926,6 +953,7 @@ PUB SyncWord(sync_word) | tmp
 ' Set transmitted (TX) or expected (RX) sync word
 '   Valid values: $0000..$FFFF
 '   Any other value polls the chip and returns the current setting
+    tmp := $00
     readReg (core#SYNC1, 2, @tmp)
     case sync_word
         $0000..$FFFF:
@@ -1015,12 +1043,12 @@ PRI readReg(reg, nr_bytes, addr_buff) | i
                     return
     reg |= core#R
 
-    outa[_CS] := 0
-    spi.SHIFTOUT(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
+    io.Low(_CS)
+    spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
 
     repeat i from 0 to nr_bytes-1
-        byte[addr_buff][i] := spi.SHIFTIN(_MISO, _SCK, core#MISO_BITORDER, 8)
-    outa[_CS] := 1
+        byte[addr_buff][i] := spi.Read(_MISO, _SCK, core#MISO_BITORDER, 8)
+    io.High(_CS)
 
 PRI writeReg(reg, nr_bytes, buf_addr) | tmp
 ' Write nr_bytes to register 'reg' stored in val
@@ -1039,18 +1067,18 @@ PRI writeReg(reg, nr_bytes, buf_addr) | tmp
                 OTHER:
                     reg |= core#BURST
 
-            outa[_CS] := 0
-            spi.SHIFTOUT(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
+            io.Low(_CS)
+            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
             repeat tmp from 0 to nr_bytes-1
-                spi.SHIFTOUT(_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buf_addr][tmp])
+                spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buf_addr][tmp])
 '                _status_byte := spi.SHIFTIN (_MISO, _SCK, core#MISO_BITORDER, 8)       'Leave disbled for now - causes write issues
-            outa[_CS] := 1
+            io.High(_CS)
 
         $30..$3D:                               ' Command strobes
-            outa[_CS] := 0
-            spi.SHIFTOUT(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
-            _status_byte := spi.SHIFTIN (_MISO, _SCK, core#MISO_BITORDER, 8)
-            outa[_CS] := 1
+            io.Low(_CS)
+            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
+            _status_byte := spi.Read (_MISO, _SCK, core#MISO_BITORDER, 8)
+            io.High(_CS)
 
         $3F:                                    ' FIFO
             case nr_bytes
@@ -1060,12 +1088,12 @@ PRI writeReg(reg, nr_bytes, buf_addr) | tmp
                 0:
                     return
 
-            outa[_CS] := 0
-            spi.SHIFTOUT(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
+            io.Low(_CS)
+            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
             repeat tmp from 0 to nr_bytes-1
-                spi.SHIFTOUT(_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buf_addr][tmp])
+                spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buf_addr][tmp])
 '                _status_byte := spi.SHIFTIN (_MISO, _SCK, core#MISO_BITORDER, 8)
-            outa[_CS] := 1
+            io.High(_CS)
 
         OTHER:                                  ' Invalid reg - ignore
             return

@@ -1,6 +1,6 @@
 {
     --------------------------------------------
-    Filename: core.con.cc1101.spin
+    Filename: core.con.cc2500.spin
     Author: Jesse Burt
     Description: Low-level constants
     Copyright (c) 2019
@@ -15,6 +15,10 @@ CON
 ' SPI Configuration
     CPOL                            = 0
     CLK_DELAY                       = 1
+    SCK_MAX_FREQ                    = 6_500_000     ' No delays needed at 6.5MHz
+'   10MHz:  100ns delay between address byte and data byte (single access)
+'           or between address and data, and between each data byte (burst access)
+'   9MHz: No delay between address and data byte (single access only)
     MOSI_BITORDER                   = 5             'MSBFIRST
     MISO_BITORDER                   = 0             'MSBPRE
 
