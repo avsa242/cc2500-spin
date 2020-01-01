@@ -18,9 +18,11 @@ CON
     FOURTN                  = 1 << 14           ' 2^14
     SIXTN                   = 1 << 16           ' 2^16
     SEVENTN                 = 1 << 17           ' 2^17
+    EIGHTTN                 = 1 << 18           ' 2^18
     SIXT                    = 1 << 16           ' 2^16
-    UM_FACT                 = 1_000_000     ' Scale to use in unsigned math object
+    UM_FACT                 = 1_000_000         ' Scale to use in unsigned math object
     UM_FREQ_RES             = 396_728515        '(F_XOSC / SIXT) * 1_000_000
+    CHANSPC_RES             = F_XOSC / EIGHTTN  ' Resolution of channel spacing
 
 ' Auto-calibration state
     NEVER                   = 0
@@ -376,6 +378,26 @@ PUB Channel(number) | tmp
 
     number &= core#CHANNR_MASK
     writeReg (core#CHANNR, 1, @number)
+
+PUB ChannelSpacing(Hz) | tmp, ch_interm, chanspc_e, chanspc_m
+' Set channel spacing/width, in Hz
+'   Valid values: 25390..405456
+'   Any other value polls the chip and returns the current setting
+    tmp := $00
+    readReg(core#MDMCFG1, 2, @tmp)
+    case Hz
+        25390..405456:
+            ch_interm := Hz / CHANSPC_RES
+            chanspc_e := log2( ((ch_interm) >> 8 {/ 256}) )
+            chanspc_m := (ch_interm / (1 << chanspc_e)) - 256
+        OTHER:
+            result := CHANSPC_RES * (256 + tmp.byte[1]) * (1 << tmp.byte[0])
+            return
+
+    tmp.byte[0] &= core#MASK_CHANSPC_E
+    tmp.byte[0] := (tmp.byte[0] | chanspc_e)
+    tmp.byte[1] := chanspc_m
+    writeReg(core#MDMCFG1, 2, @tmp)
 
 PUB CRCCheckEnabled(enabled) | tmp
 ' Enable CRC calc (TX) and check (RX)
