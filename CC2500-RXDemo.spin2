@@ -94,6 +94,7 @@ PUB Receive | rxbytes, tmp, from_node
     cc2500.PayloadLen (_pktlen)                     ' Set payload length to _pktlen
     cc2500.CRCCheckEnabled (TRUE)                   ' Enable CRC checks on received payloads
     cc2500.SyncMode (cc2500#SYNCMODE_3032_CS)       ' Accept payload as valid only if:
+    cc2500.AppendStatus (FALSE)
                                                     '   At least 30 of 32 syncword bits match
                                                     '   Carrier sense is above set threshold
 
