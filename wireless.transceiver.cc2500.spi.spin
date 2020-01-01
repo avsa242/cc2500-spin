@@ -1,18 +1,18 @@
 {
     --------------------------------------------
-    Filename: wireless.transceiver.cc1101.spi.spin
+    Filename: wireless.transceiver.cc2500.spi.spin
     Author: Jesse Burt
-    Description: Driver for TI's CC1101 ISM-band transceiver
+    Description: Driver for TI's CC2500 ISM-band (2.4GHz) transceiver
     Copyright (c) 2019
     Started Jul 7, 2019
-    Updated Jul 7, 2019
+    Updated Jan 1, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
 
 CON
 
-    F_XOSC                  = 26_000_000        ' CC1101 XTAL Oscillator freq, in Hz
+    F_XOSC                  = 26_000_000        ' CC2500 XTAL Oscillator freq, in Hz
     F_XOSC_MHZ              = F_XOSC / 1_000_000
     THIRTN                  = 1 << 13           ' 2^13
     FOURTN                  = 1 << 14           ' 2^14
@@ -47,7 +47,7 @@ CON
     FSK4                    = %100
     MSK                     = %111
 
-' CC1101 I/O pin output signals
+' CC2500 I/O pin output signals
     TRIG_RXTHRESH_END_PKT   = $01
     TRIG_RXOVERFLOW         = $04
     TRIG_TXUNDERFLOW        = $05
@@ -315,7 +315,7 @@ PUB CarrierFreqWord(freq_word) | tmp
     readReg (core#FREQ2, 3, @tmp)
     case freq_word
         $5C_4E_C4..$5F_84_EC:
-            freq_word.byte[3] := freq_word.byte[0]                    'Reverse the byte order - the CC1101 registers are MSB-MB-LSB
+            freq_word.byte[3] := freq_word.byte[0]                    'Reverse the byte order - the CC2500 registers are MSB-MB-LSB
             freq_word.byte[0] := freq_word.byte[2]                    ' but they'd by written LSB-MB-MSB without the swap
             freq_word.byte[2] := freq_word.byte[3]
             freq_word.byte[3] := 0
@@ -599,7 +599,7 @@ PUB GPIO0(config) | tmp
 ' Configure test signal output on GD0 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F
 '   Any other value polls the chip and returns the current setting
-'   NOTE: The default setting is IO_CLK_XODIV192, which outputs the CC1101's XO clock, divided by 192 on the pin.
+'   NOTE: The default setting is IO_CLK_XODIV192, which outputs the CC2500's XO clock, divided by 192 on the pin.
 '       TI recommends the clock outputs be disabled when the radio is active, for best performance.
 '       Only one IO pin at a time can be configured as a clock output.
     tmp := $00
