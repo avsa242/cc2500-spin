@@ -101,7 +101,6 @@ PUB Receive | rxbytes, tmp, from_node
     ser.Clear
     ser.Position(0, 0)
     ser.PrintF("Receive mode - %dHz\n", cc2500.CarrierFreq(-2))
-
     ser.PrintF("Listening for traffic on node address $")
     ser.Hex(cc2500.NodeAddress(-2), 2)
 
