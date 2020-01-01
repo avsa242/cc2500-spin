@@ -1,11 +1,11 @@
-i{
+{
     --------------------------------------------
     Filename: CC2500-TXDemo.spin
     Author: Jesse Burt
     Description: Simple transmit demo of the cc2500 driver
-    Copyright (c) 2019
+    Copyright (c) 2020
     Started Nov 23, 2019
-    Updated Dec 22, 2019
+    Updated Jan 1, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -18,7 +18,6 @@ CON
     SER_RX          = 31
     SER_TX          = 30
     SER_BAUD        = 115_200
-
 
     CS_PIN          = 0                             ' Change to your module's connections
     SCK_PIN         = 1
@@ -54,10 +53,10 @@ PUB Main | choice
     repeat until cc2500.State == 1
     ser.str(string("done", ser#CR, ser#LF))
 
-    cc2500.CarrierFreq(2_401_000)                 ' Set carrier frequency
+    cc2500.CarrierFreq(2_401_000)                   ' Set carrier frequency
     ser.str(string("Carrier freq: "))
     ser.dec(cc2500.CarrierFreq(-2))
-    ser.Newline
+    ser.str(string("kHz", ser#CR, ser#LF))
 
     ser.str(string("Waiting for PLL lock..."))
     repeat until cc2500.PLLLocked == TRUE           ' Don't proceed until PLL is locked
@@ -69,19 +68,17 @@ PUB Main | choice
     ser.dec(cc2500.TXPower(-255))
     ser.str(string("dBm", ser#CR, ser#LF))
 
-'    cc2500.DataRate(2400)
     ser.str(string("Data rate: "))
     ser.dec(cc2500.DataRate(-2))
     ser.str(string("bps", ser#CR, ser#LF))
 
-'    cc2500.FreqDeviation(4500)
     ser.str(string("Freq deviation: "))
     ser.dec(cc2500.FreqDeviation(-2))
     ser.str(string("Hz", ser#CR, ser#LF))
 
     ser.str(string("Modulation: "))
     ser.str(lookupz(cc2500.Modulation(-2): string("FSK2"), string("GFSK"), string("???"), string("ASK/OOK"), string("FSK4"), string("???"), string("???"), string("MSK")))
-    ser.str(string(ser#CR, ser#LF))
+    ser.Newline
 
     ser.str(string("Press any key to begin transmitting", ser#CR, ser#LF))
     ser.CharIn

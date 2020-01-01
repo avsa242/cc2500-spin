@@ -3,9 +3,9 @@
     Filename: CC2500-RXDemo.spin
     Author: Jesse Burt
     Description: Simple receive demo of the cc2500 driver
-    Copyright (c) 2019
+    Copyright (c) 2020
     Started Nov 23, 2019
-    Updated Dec 21, 2019                                                                                         
+    Updated Jan 1, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -13,12 +13,13 @@ CON
 
     _clkmode        = cfg#_clkmode
     _xinfreq        = cfg#_xinfreq
+
     LED             = cfg#LED1
     SER_RX          = 31
     SER_TX          = 30
     SER_BAUD        = 115_200
 
-    CS_PIN          = 0                            ' Change to your module's connections
+    CS_PIN          = 0                             ' Change to your module's connections
     SCK_PIN         = 1
     MOSI_PIN        = 2
     MISO_PIN        = 3
@@ -93,6 +94,7 @@ PUB Receive | rxbytes, tmp, from_node
     cc2500.PayloadLen (_pktlen)                     ' Set payload length to _pktlen
     cc2500.CRCCheckEnabled (TRUE)                   ' Enable CRC checks on received payloads
     cc2500.SyncMode (cc2500#SYNCMODE_3032_CS)       ' Accept payload as valid only if:
+    cc2500.AppendStatus (FALSE)
                                                     '   At least 30 of 32 syncword bits match
                                                     '   Carrier sense is above set threshold
 
