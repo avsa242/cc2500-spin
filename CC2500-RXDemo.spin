@@ -103,7 +103,6 @@ PUB Receive | rxbytes, tmp, from_node
     ser.str(string("Receive mode - "))
     ser.Dec(cc2500.CarrierFreq(-2))
     ser.str(string("Hz", ser#CR, ser#LF))
-
     ser.str(string("Listening for traffic on node address $"))
     ser.Hex(cc2500.NodeAddress(-2), 2)
 

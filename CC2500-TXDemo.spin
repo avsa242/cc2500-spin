@@ -141,12 +141,7 @@ PUB Setup
         ser.str(string("CC2500 driver failed to start - halting", ser#CR, ser#LF))
         FlashLED (LED, 500)
 
-PUB FlashLED(led_pin, delay_ms)
-
-    io.Output(led_pin)
-    repeat
-        io.Toggle(led_pin)
-        time.MSleep(delay_ms)
+#include "lib.utility.spin"
 
 DAT
 ' Radio states
