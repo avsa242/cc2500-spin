@@ -5,7 +5,7 @@
     Description: Simple transmit demo of the cc2500 driver
     Copyright (c) 2020
     Started Nov 23, 2019
-    Updated Jan 1, 2020
+    Updated Apr 28, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -126,7 +126,7 @@ PUB Transmit | count, tmp, to_node
         cc2500.FlushTX
         cc2500.FSTX
         cc2500.TXMode
-        cc2500.TXData (_pktlen, @_fifo)
+        cc2500.TXPayload (_pktlen, @_fifo)
         time.Sleep (1)                              ' Try not to abuse the airwaves - wait between transmissions
 
 PUB Setup

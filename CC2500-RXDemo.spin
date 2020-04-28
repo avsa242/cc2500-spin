@@ -5,7 +5,7 @@
     Description: Simple receive demo of the cc2500 driver
     Copyright (c) 2020
     Started Nov 23, 2019
-    Updated Jan 1, 2020
+    Updated Apr 28, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -121,7 +121,7 @@ PUB Receive | rxbytes, tmp, from_node
             rxbytes := cc2500.FIFORXBytes
         until rxbytes => _pktlen                    ' until we've received at least _pktlen bytes
 
-        cc2500.RXData(rxbytes, @_fifo)
+        cc2500.RXPayload(rxbytes, @_fifo)
         cc2500.FlushRX
 
         from_node := _fifo.byte[1]                  ' Node we've received a packet from
