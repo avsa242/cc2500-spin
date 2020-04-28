@@ -104,8 +104,8 @@ OBJ
 PUB Null
 ''This is not a top-level object
 
-PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ): okay
-'    if lookdown(SCK_FREQ: 1..5_000_000)'core#SCK_MAX_FREQ)' and lookdown(SCK_CPOL: 0, 1)   ' xxx crashes compiler
+PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ=6_500_000): okay
+
     if lookdown(CS_PIN: 0..63) and lookdown(SCK_PIN: 0..63) and lookdown(MOSI_PIN: 0..63) and lookdown(MISO_PIN: 0..63)
         if SCK_FREQ => 1 and SCK_FREQ =< core#SCK_MAX_FREQ
             if okay := spi.start (MOSI_PIN, MISO_PIN, SCK_PIN, SCK_FREQ)              'SPI Object Started?
