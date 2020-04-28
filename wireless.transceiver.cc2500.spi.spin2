@@ -82,6 +82,12 @@ CON
     ADRCHK_CHK_00_BCAST     = 2
     ADRCHK_CHK_00_FF_BCAST  = 3
 
+' AGC modes
+    AGC_NORMAL              = %00
+    AGC_FREEZE_ON_SYNC      = %01
+    AGC_FREEZE_A_AUTO_D     = %10
+    AGC_OFF                 = %11
+
 VAR
 
     byte _CS, _MOSI, _MISO, _SCK
@@ -98,11 +104,7 @@ OBJ
 PUB Null
 ''This is not a top-level object
 
-'PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): okay
-
-'    okay := Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, 1_000_000, core#CPOL)
-
-PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ): okay
+PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ): okay
 '    if lookdown(SCK_FREQ: 1..5_000_000)'core#SCK_MAX_FREQ)' and lookdown(SCK_CPOL: 0, 1)   ' xxx crashes compiler
     if lookdown(CS_PIN: 0..63) and lookdown(SCK_PIN: 0..63) and lookdown(MOSI_PIN: 0..63) and lookdown(MISO_PIN: 0..63)
         if SCK_FREQ => 1 and SCK_FREQ =< core#SCK_MAX_FREQ
@@ -239,6 +241,28 @@ PUB AGCFilterLength(samples=-2) | tmp
     tmp &= core#MASK_FILTER_LENGTH
     tmp := (tmp | samples) & core#AGCTRL0_MASK
     writeReg (core#AGCTRL0, 1, @tmp)
+
+PUB AGCMode(mode=-2) | tmp
+' Set AGC mode
+'   Valid values:
+'      *AGC_NORMAL (0): Always adjust gain when required
+'       AGC_FREEZE_ON_SYNC (1): Gain setting is frozen when a sync word has been found
+'       AGC_FREEZE_A_AUTO_D (2): Freeze analog gain, but autmatically adjust digital gain
+'       AGC_OFF (3): Freeze both analog and digital gain settings
+'   Any other value polls the chip and returns the current setting
+
+    tmp := $00
+    readReg (core#AGCCTRL0, 1, @tmp)
+    case mode
+        AGC_NORMAL, AGC_FREEZE_ON_SYNC, AGC_FREEZE_A_AUTO_D, AGC_OFF:
+            mode <<= core#FLD_AGC_FREEZE
+        OTHER:
+            result := (tmp >> core#FLD_AGC_FREEZE) & core#BITS_AGC_FREEZE
+            return
+
+    tmp &= core#MASK_AGC_FREEZE
+    tmp := (tmp | mode) & core#AGCCTRL0_MASK
+    writeReg(core#AGCCTRL0, 1, @tmp)
 
 PUB AppendStatus(enabled=-2) | tmp
 ' Append status bytes to packet payload (RSSI, LQI, CRC OK)
