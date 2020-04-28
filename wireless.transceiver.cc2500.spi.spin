@@ -82,6 +82,12 @@ CON
     ADRCHK_CHK_00_BCAST     = 2
     ADRCHK_CHK_00_FF_BCAST  = 3
 
+' AGC modes
+    AGC_NORMAL              = %00
+    AGC_FREEZE_ON_SYNC      = %01
+    AGC_FREEZE_A_AUTO_D     = %10
+    AGC_OFF                 = %11
+
 VAR
 
     byte _CS, _MOSI, _MISO, _SCK
@@ -225,7 +231,7 @@ PUB AGCFilterLength(samples) | tmp
 '       64          16dB
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL0, 1, @tmp)
+    readReg (core#AGCCTRL0, 1, @tmp)
     case samples
         8, 16, 32, 64:
             samples := lookdownz(samples: 8, 16, 32, 64) & core#BITS_FILTER_LENGTH
@@ -234,8 +240,30 @@ PUB AGCFilterLength(samples) | tmp
             return lookupz(result: 8, 16, 32, 64)
 
     tmp &= core#MASK_FILTER_LENGTH
-    tmp := (tmp | samples) & core#AGCTRL0_MASK
-    writeReg (core#AGCTRL0, 1, @tmp)
+    tmp := (tmp | samples) & core#AGCCTRL0_MASK
+    writeReg (core#AGCCTRL0, 1, @tmp)
+
+PUB AGCMode(mode) | tmp
+' Set AGC mode
+'   Valid values:
+'      *AGC_NORMAL (0): Always adjust gain when required
+'       AGC_FREEZE_ON_SYNC (1): Gain setting is frozen when a sync word has been found
+'       AGC_FREEZE_A_AUTO_D (2): Freeze analog gain, but autmatically adjust digital gain
+'       AGC_OFF (3): Freeze both analog and digital gain settings
+'   Any other value polls the chip and returns the current setting
+
+    tmp := $00
+    readReg (core#AGCCTRL0, 1, @tmp)
+    case mode
+        AGC_NORMAL, AGC_FREEZE_ON_SYNC, AGC_FREEZE_A_AUTO_D, AGC_OFF:
+            mode <<= core#FLD_AGC_FREEZE
+        OTHER:
+            result := (tmp >> core#FLD_AGC_FREEZE) & core#BITS_AGC_FREEZE
+            return
+
+    tmp &= core#MASK_AGC_FREEZE
+    tmp := (tmp | mode) & core#AGCCTRL0_MASK
+    writeReg(core#AGCCTRL0, 1, @tmp)
 
 PUB AppendStatus(enabled) | tmp
 ' Append status bytes to packet payload (RSSI, LQI, CRC OK)
@@ -335,7 +363,7 @@ PUB CarrierSense(threshold) | tmp
 '       14: 14dB increase in RSSI
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL1, 1, @tmp)
+    readReg (core#AGCCTRL1, 1, @tmp)
     case threshold
         0, 6, 10, 14:
             threshold := lookdownz(threshold: 0, 6, 10, 14) << core#FLD_CARRIER_SENSE_REL_THR
@@ -344,8 +372,8 @@ PUB CarrierSense(threshold) | tmp
             return lookupz(result: 0, 6, 10, 14)
 
     tmp &= core#MASK_CARRIER_SENSE_REL_THR
-    tmp := (tmp | threshold) & core#AGCTRL1_MASK
-    writeReg (core#AGCTRL1, 1, @tmp)
+    tmp := (tmp | threshold) & core#AGCCTRL1_MASK
+    writeReg (core#AGCCTRL1, 1, @tmp)
 
 PUB CarrierSenseAbs(threshold) | tmp
 ' Set absolute change threshold for asserting carrier sense, in dB
@@ -353,7 +381,7 @@ PUB CarrierSenseAbs(threshold) | tmp
 '       %0000..%1111
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL1, 1, @tmp)
+    readReg (core#AGCCTRL1, 1, @tmp)
     case threshold
         %0000..%1111:
             threshold := threshold & core#BITS_CARRIER_SENSE_ABS_THR
@@ -361,8 +389,8 @@ PUB CarrierSenseAbs(threshold) | tmp
             result := tmp & core#BITS_CARRIER_SENSE_ABS_THR
 
     tmp &= core#MASK_CARRIER_SENSE_ABS_THR
-    tmp := (tmp | threshold) & core#AGCTRL1_MASK
-    writeReg (core#AGCTRL1, 1, @tmp)
+    tmp := (tmp | threshold) & core#AGCCTRL1_MASK
+    writeReg (core#AGCCTRL1, 1, @tmp)
 
 PUB Channel(number) | tmp
 ' Set device channel number
@@ -517,7 +545,7 @@ PUB DVGAGain(gain) | tmp
 '       -3 - Highest gain setting-3
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL2, 1, @tmp)
+    readReg (core#AGCCTRL2, 1, @tmp)
     case gain
         -3..0:
             gain := ||gain << core#FLD_MAX_DVGA_GAIN
@@ -527,7 +555,7 @@ PUB DVGAGain(gain) | tmp
 
     tmp &= core#MASK_MAX_DVGA_GAIN
     tmp := (tmp | gain)
-    writeReg (core#AGCTRL2, 1, @tmp)
+    writeReg (core#AGCCTRL2, 1, @tmp)
 
 PUB FEC(enabled) | tmp
 ' Enable forward error correction with interleaving
@@ -708,7 +736,7 @@ PUB LNAGain(dB) | tmp
 '       -17 - ~17.1dB below maximum
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL2, 1, @tmp)
+    readReg (core#AGCCTRL2, 1, @tmp)
     case dB
         0, -2, -6, -7, -9, -11, -14, -17:
             dB := lookdownz(dB: 0, -2, -6, -7, -9, -11, -14, -17) << core#FLD_MAX_LNA_GAIN
@@ -718,7 +746,7 @@ PUB LNAGain(dB) | tmp
 
     tmp &= core#MASK_MAX_LNA_GAIN
     tmp := (tmp | dB)
-    writeReg (core#AGCTRL2, 1, @tmp)
+    writeReg (core#AGCCTRL2, 1, @tmp)
 
 PUB MagnTarget(val) | tmp
 ' Set target value for averaged amplitude from digital channel filter, in dB
@@ -726,7 +754,7 @@ PUB MagnTarget(val) | tmp
 '       24, 27, 30, 33, 36, 38, 40, 42
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL2, 1, @tmp)
+    readReg (core#AGCCTRL2, 1, @tmp)
     case val
         24, 27, 30, 33, 36, 38, 40, 42:
             val := lookdownz(val: 24, 27, 30, 33, 36, 38, 40, 42) & core#BITS_MAGN_TARGET
@@ -736,7 +764,7 @@ PUB MagnTarget(val) | tmp
 
     tmp &= core#MASK_MAGN_TARGET
     tmp := (tmp | val)
-    writeReg (core#AGCTRL2, 1, @tmp)
+    writeReg (core#AGCCTRL2, 1, @tmp)
 
 PUB ManchesterEnc(enabled) | tmp
 ' Enable Manchester encoding/decoding

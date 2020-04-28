@@ -230,7 +230,7 @@ PUB AGCFilterLength(samples=-2) | tmp
 '       64          16dB
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL0, 1, @tmp)
+    readReg (core#AGCCTRL0, 1, @tmp)
     case samples
         8, 16, 32, 64:
             samples := lookdownz(samples: 8, 16, 32, 64) & core#BITS_FILTER_LENGTH
@@ -239,8 +239,8 @@ PUB AGCFilterLength(samples=-2) | tmp
             return lookupz(result: 8, 16, 32, 64)
 
     tmp &= core#MASK_FILTER_LENGTH
-    tmp := (tmp | samples) & core#AGCTRL0_MASK
-    writeReg (core#AGCTRL0, 1, @tmp)
+    tmp := (tmp | samples) & core#AGCCTRL0_MASK
+    writeReg (core#AGCCTRL0, 1, @tmp)
 
 PUB AGCMode(mode=-2) | tmp
 ' Set AGC mode
@@ -362,7 +362,7 @@ PUB CarrierSense(threshold=-2) | tmp
 '       14: 14dB increase in RSSI
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL1, 1, @tmp)
+    readReg (core#AGCCTRL1, 1, @tmp)
     case threshold
         0, 6, 10, 14:
             threshold := lookdownz(threshold: 0, 6, 10, 14) << core#FLD_CARRIER_SENSE_REL_THR
@@ -371,8 +371,8 @@ PUB CarrierSense(threshold=-2) | tmp
             return lookupz(result: 0, 6, 10, 14)
 
     tmp &= core#MASK_CARRIER_SENSE_REL_THR
-    tmp := (tmp | threshold) & core#AGCTRL1_MASK
-    writeReg (core#AGCTRL1, 1, @tmp)
+    tmp := (tmp | threshold) & core#AGCCTRL1_MASK
+    writeReg (core#AGCCTRL1, 1, @tmp)
 
 PUB CarrierSenseAbs(threshold=-2) | tmp
 ' Set absolute change threshold for asserting carrier sense, in dB
@@ -380,7 +380,7 @@ PUB CarrierSenseAbs(threshold=-2) | tmp
 '       %0000..%1111
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL1, 1, @tmp)
+    readReg (core#AGCCTRL1, 1, @tmp)
     case threshold
         %0000..%1111:
             threshold := threshold & core#BITS_CARRIER_SENSE_ABS_THR
@@ -388,8 +388,8 @@ PUB CarrierSenseAbs(threshold=-2) | tmp
             result := tmp & core#BITS_CARRIER_SENSE_ABS_THR
 
     tmp &= core#MASK_CARRIER_SENSE_ABS_THR
-    tmp := (tmp | threshold) & core#AGCTRL1_MASK
-    writeReg (core#AGCTRL1, 1, @tmp)
+    tmp := (tmp | threshold) & core#AGCCTRL1_MASK
+    writeReg (core#AGCCTRL1, 1, @tmp)
 
 PUB Channel(number=-2) | tmp
 ' Set device channel number
@@ -544,7 +544,7 @@ PUB DVGAGain(gain=-255) | tmp
 '       -3 - Highest gain setting-3
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL2, 1, @tmp)
+    readReg (core#AGCCTRL2, 1, @tmp)
     case gain
         -3..0:
             gain := ||gain << core#FLD_MAX_DVGA_GAIN
@@ -554,7 +554,7 @@ PUB DVGAGain(gain=-255) | tmp
 
     tmp &= core#MASK_MAX_DVGA_GAIN
     tmp := (tmp | gain)
-    writeReg (core#AGCTRL2, 1, @tmp)
+    writeReg (core#AGCCTRL2, 1, @tmp)
 
 PUB FEC(enabled=-2) | tmp
 ' Enable forward error correction with interleaving
@@ -735,7 +735,7 @@ PUB LNAGain(dB=-255) | tmp
 '       -17 - ~17.1dB below maximum
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL2, 1, @tmp)
+    readReg (core#AGCCTRL2, 1, @tmp)
     case dB
         0, -2, -6, -7, -9, -11, -14, -17:
             dB := lookdownz(dB: 0, -2, -6, -7, -9, -11, -14, -17) << core#FLD_MAX_LNA_GAIN
@@ -745,7 +745,7 @@ PUB LNAGain(dB=-255) | tmp
 
     tmp &= core#MASK_MAX_LNA_GAIN
     tmp := (tmp | dB)
-    writeReg (core#AGCTRL2, 1, @tmp)
+    writeReg (core#AGCCTRL2, 1, @tmp)
 
 PUB MagnTarget(val=-2) | tmp
 ' Set target value for averaged amplitude from digital channel filter, in dB
@@ -753,7 +753,7 @@ PUB MagnTarget(val=-2) | tmp
 '       24, 27, 30, 33, 36, 38, 40, 42
 '   Any other value polls the chip and returns the current setting
     tmp := $00
-    readReg (core#AGCTRL2, 1, @tmp)
+    readReg (core#AGCCTRL2, 1, @tmp)
     case val
         24, 27, 30, 33, 36, 38, 40, 42:
             val := lookdownz(val: 24, 27, 30, 33, 36, 38, 40, 42) & core#BITS_MAGN_TARGET
@@ -763,7 +763,7 @@ PUB MagnTarget(val=-2) | tmp
 
     tmp &= core#MASK_MAGN_TARGET
     tmp := (tmp | val)
-    writeReg (core#AGCTRL2, 1, @tmp)
+    writeReg (core#AGCCTRL2, 1, @tmp)
 
 PUB ManchesterEnc(enabled=-2) | tmp
 ' Enable Manchester encoding/decoding
