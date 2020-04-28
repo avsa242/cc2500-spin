@@ -95,7 +95,7 @@ VAR
 
 OBJ
 
-    spi     : "com.spi.bitbang"
+    spi     : "com.spi"
     core    : "core.con.cc2500"
     time    : "time"
     umath   : "math.unsigned64"
@@ -108,7 +108,7 @@ PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ=6_500_000): okay
 
     if lookdown(CS_PIN: 0..63) and lookdown(SCK_PIN: 0..63) and lookdown(MOSI_PIN: 0..63) and lookdown(MISO_PIN: 0..63)
         if SCK_FREQ => 1 and SCK_FREQ =< core#SCK_MAX_FREQ
-            if okay := spi.start (MOSI_PIN, MISO_PIN, SCK_PIN, SCK_FREQ)
+            if okay := spi.start (SCK_PIN, MOSI_PIN, MISO_PIN, SCK_FREQ)
                 time.MSleep (5)
                 _CS := CS_PIN
                 _MOSI := MOSI_PIN
@@ -326,10 +326,6 @@ PUB CarrierFreq(kHz=-2) | tmp'XXX
         2_400_000..2_483_500:
             kHz := umath.multdiv (F_XOSC, UM_FACT, kHz)   'Need 64bit math to hold the large scaled up numbers
             kHz := umath.multdiv (SIXTN, UM_FACT*1_000, kHz)
-'            kHz.byte[3] := kHz.byte[0]                    'Reverse the byte order - the CC2500 registers are MSB-MB-LSB
-'            kHz.byte[0] := kHz.byte[2]                    ' but they'd by written LSB-MB-MSB without the swap
-'            kHz.byte[2] := kHz.byte[3]
-'            kHz.byte[3] := 0
             kHz := (kHz.byte[0] << 16) | (kHz.byte[1] << 8) | kHz.byte[2]
         OTHER:
             result := ((tmp.byte[0] << 16) | (tmp.byte[1] << 8) | tmp.byte[2])
@@ -1103,8 +1099,10 @@ PRI readReg(reg, nr_bytes, buff_addr) | i
                     reg |= core#BURST
                 OTHER:
                     return
+
         $30..$3D:                               ' Status regs
             reg |= core#BURST                   '   Must set BURST mode bit to read them, else they're interpreted as command strobes
+
         $3F:                                    ' FIFO
             case nr_bytes
                 1:
@@ -1112,18 +1110,18 @@ PRI readReg(reg, nr_bytes, buff_addr) | i
                     reg |= core#BURST
                 0:
                     return
+
             io.Low(_CS)
-            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg | core#R)
+            spi.Write(reg | core#R)
             repeat i from 0 to nr_bytes-1
-                byte[buff_addr][i] := spi.Read(_MISO, _SCK, core#MISO_BITORDER, 8)
+                byte[buff_addr][i] := spi.Read
             io.High(_CS)
             return
 
     io.Low(_CS)
-    spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg | core#R)
-
+    spi.Write(reg | core#R)
     repeat i from 0 to nr_bytes-1
-        byte[buff_addr][i] := spi.Read(_MISO, _SCK, core#MISO_BITORDER, 8)
+        byte[buff_addr][i] := spi.Read & $FF
     io.High(_CS)
     return
 
@@ -1147,20 +1145,20 @@ PRI writeReg(reg, nr_bytes, buff_addr) | tmp
                     return
 
             io.Low(_CS)
-            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
+            spi.Write(reg)
             repeat tmp from 0 to nr_bytes-1
-                spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buff_addr][tmp])
-'                _status_byte := spi.SHIFTIN (_MISO, _SCK, core#MISO_BITORDER, 8)       'Leave disbled for now - causes write issues
+                spi.Write(byte[buff_addr][tmp])
             io.High(_CS)
+            return
 
         $30..$3D:                               ' Command strobes
             io.Low(_CS)
-            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
-            _status_byte := spi.Read (_MISO, _SCK, core#MISO_BITORDER, 8)
+            spi.Write(reg)
             io.High(_CS)
+            return
 
         $3F:                                    ' FIFO
-            case_fast nr_bytes
+            case nr_bytes
                 1:
                 2..64:
                     reg |= core#BURST
@@ -1168,11 +1166,11 @@ PRI writeReg(reg, nr_bytes, buff_addr) | tmp
                     return
 
             io.Low(_CS)
-            spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, reg)
+            spi.Write(reg)
             repeat tmp from 0 to nr_bytes-1
-                spi.Write(_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buff_addr][tmp])
-'                _status_byte := spi.SHIFTIN (_MISO, _SCK, core#MISO_BITORDER, 8)
+                spi.Write(byte[buff_addr][tmp])
             io.High(_CS)
+            return
 
         OTHER:                                  ' Invalid reg - ignore
             return
