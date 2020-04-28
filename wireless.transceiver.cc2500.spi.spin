@@ -3,9 +3,9 @@
     Filename: wireless.transceiver.cc2500.spi.spin
     Author: Jesse Burt
     Description: Driver for TI's CC2500 ISM-band (2.4GHz) transceiver
-    Copyright (c) 2019
+    Copyright (c) 2020
     Started Jul 7, 2019
-    Updated Jan 1, 2020
+    Updated Apr 28, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -50,10 +50,12 @@ CON
     MSK                     = %111
 
 ' CC2500 I/O pin output signals
+    TRIG_RXTHRESH           = $00
     TRIG_RXTHRESH_END_PKT   = $01
     TRIG_RXOVERFLOW         = $04
     TRIG_TXUNDERFLOW        = $05
     TRIG_SYNCWORD_TXRX      = $06
+    TRIG_PREAMBLE_QUALITY   = $08
     TRIG_CARRIER            = $0E
     IO_CHIP_RDYn            = $29
     IO_XOSC_STABLE          = $2B
@@ -578,10 +580,6 @@ PUB FEC(enabled) | tmp
     tmp := (tmp | enabled) & core#MDMCFG1_MASK
     writeReg (core#MDMCFG1, 1, @tmp)
 
-PUB FIFO
-' Returns number of bytes available in RX FIFO or free bytes in TX FIFO
-    return Status & %1111
-
 PUB FIFORXBytes
 ' Returns number of bytes in RX FIFO
 ' NOTE: The MSB indicates if the RX FIFO has overflowed.
@@ -611,7 +609,7 @@ PUB FlushTX
 '        OTHER:
 '            return
 
-PUB FreqDeviation(freq) | tmp, deviat_m, deviat_e, tmp_m
+PUB FreqDeviation(Hz) | tmp, deviat_m, deviat_e, tmp_m
 ' Set frequency deviation from carrier, in Hz
 '   Valid values:
 '       1_586..380_859
@@ -622,12 +620,12 @@ PUB FreqDeviation(freq) | tmp, deviat_m, deviat_e, tmp_m
 '   Any other value polls the chip and returns the current setting
     tmp := deviat_e := deviat_m := tmp_m := 0
     readReg (core#DEVIATN, 1, @tmp)
-    case freq
+    case Hz
         1_587..380_859:
-            deviat_e := umath.MultDiv(freq, FOURTN, F_XOSC)
+            deviat_e := umath.MultDiv(Hz, FOURTN, F_XOSC)
             deviat_e := log2(deviat_e)
             tmp_m := F_XOSC * (1 << deviat_e)
-            deviat_m := umath.MultDiv(freq, SEVENTN, tmp_m)
+            deviat_m := umath.MultDiv(Hz, SEVENTN, tmp_m)
             tmp := (deviat_e << core#FLD_DEVIATION_E) | deviat_m
         OTHER:
             deviat_m := tmp & core#BITS_DEVIATION_M
@@ -824,20 +822,20 @@ PUB NodeAddress(addr) | tmp
     addr &= core#ADDR_MASK
     writeReg (core#ADDR, 1, @addr)
 
+PUB PARead(buff_addr)
+' Read 8-byte PA table into buff_addr
+'   NOTE: Ensure buff_addr is at least 8 bytes
+    readReg (core#PATABLE | core#BURST, 8, buff_addr)
+
 PUB PartNumber
 ' Part number of device
 '   Returns: $80
     readReg (core#PARTNUM, 1, @result)
 
-PUB PARead(buf_addr)
-' Read 8-byte PA table into buf_addr
-'   NOTE: Ensure buf_addr is at least 8 bytes
-    readReg (core#PATABLE | core#BURST, 8, buf_addr)
-
-PUB PAWrite(buf_addr)
-' Write 8-byte PA table from buf_addr
-'   NOTE: Table will be written starting at index 0 from the LSB of buf_addr
-    writeReg (core#PATABLE | core#BURST, 8, buf_addr)
+PUB PAWrite(buff_addr)
+' Write 8-byte PA table from buff_addr
+'   NOTE: Table will be written starting at index 0 from the LSB of buff_addr
+    writeReg (core#PATABLE | core#BURST, 8, buff_addr)
 
 PUB PayloadLen(length) | tmp
 ' Set payload length, when using fixed payload length mode,
@@ -920,11 +918,16 @@ PUB Reset
 
 PUB RSSI
 ' Received Signal Strength Indicator
+    result := $00
     readReg (core#RSSI, 1, @result)
+    result := ~result
+    result := (result >> 1) - 74
+{
     if result => 128
         result := ((result - 256) / 2) - 74
     else
         result := (result / 2) - 74
+}
 
 PUB RXBandwidth(kHz) | tmp
 ' Set receiver channel filter bandwidth, in kHz
