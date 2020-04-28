@@ -98,7 +98,7 @@ OBJ
     spi     : "com.spi.4w"                                             'PASM SPI Driver
     core    : "core.con.cc2500"
     time    : "time"                                                'Basic timing functions
-    u64     : "math.unsigned64"
+    umath   : "math.unsigned64"
 
 PUB Null
 ''This is not a top-level object
@@ -306,8 +306,8 @@ PUB AutoCal(when) | tmp
 
 PUB CalcFreqWord(Hz)
 
-    result := u64.multdiv (F_XOSC, UM_FACT, Hz)   'Need 64bit math to hold the large scaled up numbers
-    result := u64.multdiv (SIXT, UM_FACT, result)
+    result := umath.multdiv (F_XOSC, UM_FACT, Hz)   'Need 64bit math to hold the large scaled up numbers
+    result := umath.multdiv (SIXT, UM_FACT, result)
     return
 
 PUB CalFreqSynth
@@ -324,8 +324,8 @@ PUB CarrierFreq(kHz) | tmp'XXX
     readReg (core#FREQ2, 3, @tmp)
     case kHz
         2_400_000..2_483_500:
-            kHz := u64.multdiv (F_XOSC, UM_FACT, kHz)   'Need 64bit math to hold the large scaled up numbers
-            kHz := u64.multdiv (SIXT, UM_FACT*1_000, kHz)
+            kHz := umath.multdiv (F_XOSC, UM_FACT, kHz)   'Need 64bit math to hold the large scaled up numbers
+            kHz := umath.multdiv (SIXT, UM_FACT*1_000, kHz)
             kHz.byte[3] := kHz.byte[0]                    'Reverse the byte order - the CC2500 registers are MSB-MB-LSB
             kHz.byte[0] := kHz.byte[2]                    ' but they'd by written LSB-MB-MSB without the swap
             kHz.byte[2] := kHz.byte[3]
@@ -333,7 +333,7 @@ PUB CarrierFreq(kHz) | tmp'XXX
 '            return kHz
         OTHER:
             result := ((tmp.byte[0] << 16) | (tmp.byte[1] << 8) | tmp.byte[2])
-            return u64.multdiv (result, UM_FREQ_RES, 1_000_000_000)
+            return umath.multdiv (result, UM_FREQ_RES, 1_000_000_000)
 
     writeReg (core#FREQ2, 3, @kHz)
 
@@ -407,23 +407,26 @@ PUB Channel(number) | tmp
     number &= core#CHANNR_MASK
     writeReg (core#CHANNR, 1, @number)
 
-PUB ChannelSpacing(Hz) | tmp, ch_interm, chanspc_e, chanspc_m
-' Set channel spacing/width, in Hz
-'   Valid values: 25390..405456
+PUB ChannelSpacing(Hz) | tmp, chanspc_e, chanspc_m, chanspc_res_tmp
+' Set channel spacing, in Hz
+'   Valid values: 25390..405456 (default: 199951)
 '   Any other value polls the chip and returns the current setting
-    tmp := $00
+    tmp := chanspc_e := chanspc_m := chanspc_res_tmp := $0000
     readReg(core#MDMCFG1, 2, @tmp)
     case Hz
         25390..405456:
-            ch_interm := Hz / CHANSPC_RES
-            chanspc_e := log2( ((ch_interm) >> 8 {/ 256}) )
-            chanspc_m := (ch_interm / (1 << chanspc_e)) - 256
+            repeat chanspc_e from 0 to 3
+                chanspc_m :=  (Hz / (99 * (1 << chanspc_e)) - 256)
+                if chanspc_m => 0 and chanspc_m < 256
+                    quit
         OTHER:
-            result := CHANSPC_RES * (256 + tmp.byte[1]) * (1 << tmp.byte[0])
-            return
+            chanspc_e := tmp.byte[0] & core#BITS_CHANSPC_E
+            chanspc_m := tmp.byte[1]
+            tmp := (256 + chanspc_m) * (1 << chanspc_e)
+            return umath.MultDiv(CHANSPC_RES, tmp, 1_000_000)
 
     tmp.byte[0] &= core#MASK_CHANSPC_E
-    tmp.byte[0] := (tmp.byte[0] | chanspc_e)
+    tmp.byte[0] := tmp.byte[0] | chanspc_e
     tmp.byte[1] := chanspc_m
     writeReg(core#MDMCFG1, 2, @tmp)
 
@@ -621,10 +624,10 @@ PUB FreqDeviation(freq) | tmp, deviat_m, deviat_e, tmp_m
     readReg (core#DEVIATN, 1, @tmp)
     case freq
         1_587..380_859:
-            deviat_e := u64.MultDiv(freq, FOURTN, F_XOSC)
+            deviat_e := umath.MultDiv(freq, FOURTN, F_XOSC)
             deviat_e := log2(deviat_e)
             tmp_m := F_XOSC * (1 << deviat_e)
-            deviat_m := u64.MultDiv(freq, SEVENTN, tmp_m)
+            deviat_m := umath.MultDiv(freq, SEVENTN, tmp_m)
             tmp := (deviat_e << core#FLD_DEVIATION_E) | deviat_m
         OTHER:
             deviat_m := tmp & core#BITS_DEVIATION_M
