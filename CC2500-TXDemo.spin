@@ -3,9 +3,9 @@
     Filename: CC2500-TXDemo.spin
     Author: Jesse Burt
     Description: Simple transmit demo of the cc2500 driver
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started Nov 23, 2019
-    Updated Apr 28, 2020
+    Updated Jan 10, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -14,9 +14,8 @@ CON
     _clkmode        = cfg#_clkmode
     _xinfreq        = cfg#_xinfreq
 
+' -- User-modifiable constants
     LED             = cfg#LED1
-    SER_RX          = 31
-    SER_TX          = 30
     SER_BAUD        = 115_200
 
     CS_PIN          = 0                             ' Change to your module's connections
@@ -25,123 +24,109 @@ CON
     MISO_PIN        = 3
 
     NODE_ADDRESS    = $02
+' --
 
 OBJ
 
     ser         : "com.serial.terminal.ansi"
     cfg         : "core.con.boardcfg.flip"
-    io          : "io"
     time        : "time"
     int         : "string.integer"
     cc2500      : "wireless.transceiver.cc2500.spi"
 
 VAR
 
-    long _ser_cog, _cc2500_cog
     long _fifo[16]
     byte _pktlen
 
-PUB Main | choice
+PUB Main{}
 
-    Setup
+    setup{}
 
-    cc2500.GPIO0 (cc2500#IO_HI_Z)                   ' Set CC2500 GPIO0 to Hi-Z mode
-    cc2500.AutoCal(cc2500#IDLE_RXTX)                ' Perform auto-calibration when transitioning from Idle to TX
-    cc2500.Idle
+    cc2500.gpio0(cc2500#IO_HI_Z)                ' set GPIO0 to hi-Z mode
+    cc2500.autocal(cc2500#IDLE_RXTX)            ' calibrate on idle to RX/TX
+    cc2500.idle{}
 
     ser.str(string("Waiting for radio idle status..."))
-    repeat until cc2500.State == 1
-    ser.str(string("done", ser#CR, ser#LF))
+    repeat until cc2500.state{} == 1
+    ser.strln(string("done"))
 
-    cc2500.CarrierFreq(2_401_000)                   ' Set carrier frequency
-    ser.str(string("Carrier freq: "))
-    ser.dec(cc2500.CarrierFreq(-2))
-    ser.str(string("kHz", ser#CR, ser#LF))
+    cc2500.carrierfreq(2_401_000)               ' set carrier frequency
 
     ser.str(string("Waiting for PLL lock..."))
-    repeat until cc2500.PLLLocked == TRUE           ' Don't proceed until PLL is locked
-    ser.str(string("done", ser#CR, ser#LF))
+    repeat until cc2500.plllocked{} == TRUE     ' wait until PLL is locked
+    ser.strln(string("done"))
 
-    cc2500.TXPowerIndex(0)
-    cc2500.TXPower(0)                              ' -55, -30, -28, -26, -24, -22, -20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 1
+    cc2500.txpowerindex(0)
+
+    ' transmit power levels:
+    ' -55, -30, -28, -26, -24, -22, -20, -18, -16, -14, -12, -10, -8, -6, -4,
+    ' -2, 0, 1
+    cc2500.txpower(0)
     ser.str(string("TXPower: "))
-    ser.dec(cc2500.TXPower(-255))
-    ser.str(string("dBm", ser#CR, ser#LF))
+    ser.dec(cc2500.txpower(-255))               ' confirm current value
+    ser.strln(string("dBm"))
 
-    ser.str(string("Data rate: "))
-    ser.dec(cc2500.DataRate(-2))
-    ser.str(string("bps", ser#CR, ser#LF))
+    ser.strln(string("Press any key to begin transmitting"))
+    ser.charin{}
 
-    ser.str(string("Freq deviation: "))
-    ser.dec(cc2500.FreqDeviation(-2))
-    ser.str(string("Hz", ser#CR, ser#LF))
+    transmit{}
 
-    ser.str(string("Modulation: "))
-    ser.str(lookupz(cc2500.Modulation(-2): string("FSK2"), string("GFSK"), string("???"), string("ASK/OOK"), string("FSK4"), string("???"), string("???"), string("MSK")))
-    ser.Newline
-
-    ser.str(string("Press any key to begin transmitting", ser#CR, ser#LF))
-    ser.CharIn
-
-    Transmit
-
-    FlashLED(LED, 100)     ' Signal execution finished
-
-PUB Transmit | count, tmp, to_node
+PUB Transmit{} | count, tmp, to_node
 
     _pktlen := 10
-    cc2500.NodeAddress(NODE_ADDRESS)                ' Set this node's address
-    cc2500.PayloadLenCfg (cc2500#PKTLEN_FIXED)      ' Fixed payload length
-    cc2500.PayloadLen (_pktlen)                     ' Set payload length to _pktlen
-    cc2500.CRCCheckEnabled (TRUE)                   ' Enable CRC checks on received payloads
-    cc2500.SyncMode (cc2500#SYNCMODE_3032_CS)       ' Accept payload as valid only if:
-    cc2500.AppendStatus (FALSE)                     '   At least 30 of 32 syncword bits match
-                                                    '   Carrier sense is above set threshold
+    cc2500.nodeaddress(NODE_ADDRESS)            ' this node's address
+    cc2500.payloadlencfg(cc2500#PKTLEN_FIXED)   ' fixed payload length mode
+    cc2500.payloadlen(_pktlen)                  ' set payload length
+    cc2500.crccheckenabled(TRUE)                ' enable CRC checks
+    cc2500.syncmode(cc2500#SYNCMODE_3032_CS)    ' accept payload as valid if:
+    cc2500.appendstatus(FALSE)                  ' 30 of 32 syncword bits match
+                                                ' Carrier sense > threshold
     to_node := $01
 
-    ser.Clear
-    ser.Position(0, 0)
+    ser.clear{}
+    ser.position(0, 0)
     ser.str(string("Transmit mode - "))
-    ser.Dec(cc2500.CarrierFreq(-2))
-    ser.str(string("Hz", ser#CR, ser#LF))
+    ser.dec(cc2500.carrierfreq(-2))
+    ser.strln(string("Hz"))
     ser.str(string("Transmitting to node $"))
-    ser.Hex(to_node, 2)
+    ser.hex(to_node, 2)
 
-    _fifo.byte[0] := to_node                        ' Address of node we're sending to
-    _fifo.byte[1] := NODE_ADDRESS                   ' This node's address
-    _fifo.byte[2] := "T"                            ' Start of payload
+    _fifo.byte[0] := to_node                    ' address of node to send to
+    _fifo.byte[1] := NODE_ADDRESS               ' this node's address
+    _fifo.byte[2] := "T"                        ' start of payload
     _fifo.byte[3] := "E"
     _fifo.byte[4] := "S"
     _fifo.byte[5] := "T"
 
     count := 0
-    cc2500.AfterTX (cc2500#TXOFF_IDLE)              ' What state to change the radio to after transmission
+    cc2500.aftertx(cc2500#TXOFF_IDLE)           ' change to state after tx
     repeat
-        tmp := int.DecZeroed(count++, 4)            ' Tack a counter onto the
-        bytemove(@_fifo.byte[6], tmp, 4)            '   end of the payload
+        tmp := int.deczeroed(count++, 4)        ' tack a counter onto the
+        bytemove(@_fifo.byte[6], tmp, 4)        '   end of the payload
         ser.position(0, 10)
         ser.str(string("Sending "))
         ser.str(@_fifo)
-        cc2500.Idle
-        cc2500.FlushTX
-        cc2500.FSTX
-        cc2500.TXMode
-        cc2500.TXPayload (_pktlen, @_fifo)
-        time.Sleep (1)                              ' Try not to abuse the airwaves - wait between transmissions
+        cc2500.idle{}
+        cc2500.flushtx{}
+        cc2500.fstx{}
+        cc2500.txmode{}
+        cc2500.txpayload(_pktlen, @_fifo)
 
-PUB Setup
+        ' wait between packets to reduce abuse of the airwaves
+        time.sleep(5)
 
-    repeat until _ser_cog := ser.StartRXTX (SER_RX, SER_TX, 0, SER_BAUD)
-    time.MSleep(100)
-    ser.Clear
-    ser.str(string("Serial terminal started", ser#CR, ser#LF))
-    if _cc2500_cog := cc2500.Start (CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN)
-        ser.str(string("CC2500 driver started", ser#CR, ser#LF))
+PUB Setup{}
+
+    ser.start(SER_BAUD)
+    time.msleep(100)
+    ser.clear{}
+    ser.strln(string("Serial terminal started"))
+    if cc2500.start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN)
+        ser.strln(string("CC2500 driver started"))
     else
-        ser.str(string("CC2500 driver failed to start - halting", ser#CR, ser#LF))
-        FlashLED (LED, 500)
-
-#include "lib.utility.spin"
+        ser.strln(string("CC2500 driver failed to start - halting"))
+        repeat
 
 DAT
 ' Radio states

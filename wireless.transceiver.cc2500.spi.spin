@@ -95,16 +95,16 @@ VAR
 
 OBJ
 
-    spi : "com.spi.4w"                                             'PASM SPI Driver
+    spi : "com.spi.4w"
     core: "core.con.cc2500"
-    time: "time"                                                'Basic timing functions
+    time: "time"
     u64 : "math.unsigned64"
 
 PUB Null{}
-'This is not a top-level object
+' This is not a top-level object
 
-PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): okay
-
+PUB Start(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): okay
+' Start using custom I/O settings and 1MHz SPI bus speed
     if lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and{
     } lookdown(MOSI_PIN: 0..31) and lookdown(MISO_PIN: 0..31)
         if okay := spi.start(core#CLK_DELAY, core#CPOL)
@@ -121,6 +121,7 @@ PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): okay
                 return okay
     ' if this point is reached, something above failed
     ' Double check I/O pin assignments, connections, power
+    ' Lastly - make sure you have at least one free core/cog
     return FALSE
 
 PUB Stop{}
@@ -129,6 +130,7 @@ PUB Stop{}
 
 PUB Defaults{}
 ' Factory default settings
+{'  This is what _would_ be set:
     nodeaddress($00)
     addresscheck(ADRCHK_NONE)
     appendstatus(TRUE)
@@ -155,6 +157,8 @@ PUB Defaults{}
     syncmode(SYNCMODE_1616)
     syncword($D391)
     datawhitening(TRUE)
+}'   but to save code space, we'll just Reset(), instead
+    reset{}
 
 PUB PresetFixedPktlen{}
 ' Like PresetRobust1(), but sets packet length config mode to fixed-length
@@ -167,7 +171,7 @@ PUB PresetRobust1{}
 ' * perform oscillator auto-cal when transitioning from idle to RX or TX
 ' * reject packets with a bad CRC (i.e., flush from receive buffer)
 ' * turn off oscillator output on GPIO0 (GDO0)
-    defaults{}
+    reset{}                                     ' start with POR defaults
     addresscheck(ADRCHK_CHK_NO_BCAST)
     autocal(IDLE_RXTX)
     crcautoflush(TRUE)
