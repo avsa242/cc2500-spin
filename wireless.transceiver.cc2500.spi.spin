@@ -288,7 +288,7 @@ PUB AppendStatus(mode): curr_mode
         0, 1:
             mode := ||(mode) << core#APPEND_STATUS
         other:
-            return ((curr_mode >> core#APPEND_STATUS) & %1) == 1
+            return ((curr_mode >> core#APPEND_STATUS) & 1) == 1
 
     mode := ((curr_mode & core#APPEND_STATUS_MASK) | mode) & core#PKTCTRL1_MASK
     writereg(core#PKTCTRL1, 1, @mode)
@@ -421,7 +421,7 @@ PUB CRCCheckEnabled(mode): curr_mode
         0, 1:
             mode := ||(mode) << core#CRC_EN
         other:
-            return ((curr_mode >> core#CRC_EN) & %1) == 1
+            return ((curr_mode >> core#CRC_EN) & 1) == 1
 
     mode := ((curr_mode & core#CRC_EN_MASK) | mode) & core#PKTCTRL0_MASK
     writereg(core#PKTCTRL0, 1, @mode)
@@ -438,7 +438,7 @@ PUB CRCAutoFlush(mode): curr_mode
         0, 1:
             mode := ||(mode) << core#CRC_AUTOFLUSH
         other:
-            return ((curr_mode >> core#CRC_AUTOFLUSH) & %1) == 1
+            return ((curr_mode >> core#CRC_AUTOFLUSH) & 1) == 1
 
     mode := ((curr_mode & core#CRC_AUTOFLUSH_MASK) | mode) & core#PKTCTRL1_MASK
     writereg(core#PKTCTRL1, 1, @mode)
@@ -483,7 +483,7 @@ PUB DataWhitening(mode): curr_mode
         0, 1:
             mode := ||(mode) << core#WHITE_DATA
         other:
-            return ((curr_mode >> core#WHITE_DATA) & %1) == 1
+            return ((curr_mode >> core#WHITE_DATA) & 1) == 1
 
     mode := ((curr_mode & core#WHITE_DATA_MASK) | mode)
     writereg(core#PKTCTRL0, 1, @mode)
@@ -500,7 +500,7 @@ PUB DCBlock(mode): curr_mode
         0, 1:
             mode := ((mode ^ 1) << core#DCFILT_OFF)
         other:
-            return (((curr_mode >> core#DCFILT_OFF) & %1) ^ 1) == 1
+            return (((curr_mode >> core#DCFILT_OFF) & 1) ^ 1) == 1
 
     mode := ((curr_mode & core#DCFILT_OFF_MASK) | mode)
     writereg(core#MDMCFG2, 1, @mode)
@@ -542,7 +542,7 @@ PUB FEC(mode): curr_mode
         0, 1:
             mode := ||(mode) << core#FEC_EN
         other:
-            return ((curr_mode >> core#FEC_EN) & %1) == 1
+            return ((curr_mode >> core#FEC_EN) & 1) == 1
 
     mode := ((curr_mode & core#FEC_EN_MASK) | mode) & core#MDMCFG1_MASK
     writereg(core#MDMCFG1, 1, @mode)
@@ -672,7 +672,7 @@ PUB LastCRCGood{}: flag
 ' Flag indicating CRC of last reception matched
 '   Returns: TRUE (-1) if comparison matched, FALSE (0) otherwise
     readreg(core#LQI, 1, @flag)
-    return ((flag >> core#CRC_OK) & %1) == 1
+    return ((flag >> core#CRC_OK) & 1) == 1
 
 PUB LNAGain(gain): curr_gain
 ' Set maximum LNA+LNA2 gain (relative to maximum possible gain)
@@ -725,7 +725,7 @@ PUB ManchesterEnc(mode): curr_mode
         0, 1:
             mode := ||(mode) << core#MANCHST_EN
         other:
-            return ((curr_mode >> core#MANCHST_EN) & %1) == 1
+            return ((curr_mode >> core#MANCHST_EN) & 1) == 1
 
     mode := ((curr_mode & core#MANCHST_EN_MASK) | mode)
     writereg(core#MDMCFG2, 1, @mode)

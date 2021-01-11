@@ -106,7 +106,7 @@ CON
         WHITE_DATA_MASK         = (1 << WHITE_DATA) ^ PKTCTRL0_MASK
         PKT_FORMAT_MASK         = (PKT_FORMAT_BITS << PKT_FORMAT) ^ PKTCTRL0_MASK
         CRC_EN_MASK             = (1 << CRC_EN) ^ PKTCTRL0_MASK
-        LEN_CFG_MASK            = (LEN_CFG_BITS << LEN_CFG) ^ PKTCTRL0_MASK 
+        LEN_CFG_MASK            = (LEN_CFG_BITS << LEN_CFG) ^ PKTCTRL0_MASK
 
     ADDR                        = $09
     ADDR_MASK                   = $FF
