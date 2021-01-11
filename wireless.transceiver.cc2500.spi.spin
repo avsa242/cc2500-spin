@@ -5,7 +5,7 @@
     Description: Driver for TI's CC2500 ISM-band (2.4GHz) transceiver
     Copyright (c) 2021
     Started Jul 7, 2019
-    Updated Jan 10, 2021
+    Updated Jan 11, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -54,7 +54,7 @@ CON
     TRIG_TXUNDERFLOW        = $05
     TRIG_SYNCWORD_TXRX      = $06
     TRIG_PREAMBLE_QUALITY   = $08
-    TRIG_CARR            = $0E
+    TRIG_CARRIER            = $0E
     IO_CHIP_RDYn            = $29
     IO_XOSC_STABLE          = $2B
     IO_HI_Z                 = $2E

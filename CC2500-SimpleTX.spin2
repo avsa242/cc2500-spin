@@ -3,9 +3,9 @@
     Filename: CC2500-SimpleTX.spin
     Author: Jesse Burt
     Description: Simple transmit demo of the cc2500 driver
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started Nov 29, 2020
-    Updated Nov 29, 2020
+    Updated Jan 11, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -63,7 +63,7 @@ PUB Main() | counter, str_counter, i, pktlen
 
     ser.clear()
     ser.position(0, 0)
-    ser.printf(string("Transmit mode - %dHz\n"), cc2500.carrierfreq(-2))
+    ser.printf(string("Transmit mode - %dkHz\n"), cc2500.carrierfreq(-2))
 
     counter := 0
     repeat

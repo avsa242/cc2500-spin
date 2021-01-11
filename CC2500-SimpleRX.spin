@@ -3,9 +3,9 @@
     Filename: CC2500-SimpleRX.spin
     Author: Jesse Burt
     Description: Simple receive demo of the cc2500 driver
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started Nov 29, 2020
-    Updated Nov 29, 2020
+    Updated Jan 11, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -27,8 +27,6 @@ CON
     NODE_ADDRESS    = $01                       ' this node's address (1..254)
 ' --
 
-    POS_TONODE      = 0
-    POS_PAYLD       = 1
     MAX_PAYLD       = 255
 
 OBJ
@@ -56,7 +54,7 @@ PUB Main{} | tmp, rxbytes
 
     ser.clear{}
     ser.position(0, 0)
-    ser.printf1(string("Receive mode - %dHz\n"), cc2500.carrierfreq(-2))
+    ser.printf1(string("Receive mode - %dkHz\n"), cc2500.carrierfreq(-2))
 
     repeat
         bytefill(@_pkt_tmp, $00, MAX_PAYLD)     ' clear out buffers 
