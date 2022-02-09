@@ -7,10 +7,10 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the TI CC25
 
 ## Salient Features
 
-* SPI connection at up to 1MHz (P1), up to _TBD_ (P2)
+* SPI connection at up to 1MHz (P1), up to 6.5MHz (P2)
 * Supports setting carrier frequency from 2,400,000kHz to 2,483,500kHz
 * Set common RF parameters: Receive bandwidth, IF, carrier freq, DC block filter, RX Gain (LNA, DVGA), TX power, FSK deviation freq, modulation (2/4FSK, GFSK, MSK, ASK/OOK)
-* Supports on-air baud rates from 1.2kbps to 500kbps
+* Supports on-air baud rates from 600bps to 500kbps
 * Set number of preamble bytes
 * Set function of CC2500's GPIO pins
 * Optional address filtering
@@ -25,15 +25,18 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the TI CC25
 
 P1/SPIN1:
 * spin-standard-library
-* P1: 1 extra core/cog for the PASM SPI driver
+* P1: 1 extra core/cog for the PASM SPI engine
 
 P2/SPIN2:
 * p2-spin-standard-library
 
 ## Compiler Compatibility
 
-* P1/SPIN1: OpenSpin (tested with 1.00.81)
-* P2/SPIN2: FastSpin (tested with 4.1.10-beta)
+* P1/SPIN1 OpenSpin (bytecode): Untested (deprecated)
+* P1/SPIN1 FlexSpin (bytecode): OK, tested with 5.9.7-beta
+* P1/SPIN1 FlexSpin (native): OK, tested with 5.9.7-beta
+* ~~P2/SPIN2 FlexSpin (nu-code): FTBFS, tested with 5.9.7-beta~~
+* P2/SPIN2 FlexSpin (native): OK, tested with 5.9.7-beta
 * ~~BST~~ (incompatible - no preprocessor)
 * ~~Propeller Tool~~ (incompatible - no preprocessor)
 * ~~PNut~~ (incompatible - no preprocessor)
@@ -41,10 +44,4 @@ P2/SPIN2:
 ## Limitations
 
 * Very early in development - may malfunction or outright fail to build
-* Available OTA baud rates are currently just common presets from 1k to 500k.
 
-## TODO
-
-- [x] Implement & verify TX deviation functionality
-- [x] Implement method to change channel spacing
-- [ ] Verify RSSI functionality
