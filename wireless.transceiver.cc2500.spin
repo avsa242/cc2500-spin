@@ -320,12 +320,12 @@ PUB CalFreqSynth{}
     writereg(core#CS_SCAL, 0, 0)
 
 PUB CarrierFreq(freq): curr_freq
-' Set carrier/center frequency, in Hz
+' Set carrier/center frequency, in kHz
 '   Valid values:
 '       2_400_000..2_483_500
 '   Default value: Approx 2_464_000
 '   Any other value polls the chip and returns the current setting
-'   NOTE: The actual set frequency has a resolution of fXOSC/2^16 (i.e., approx 397freq)
+'   NOTE: The actual set frequency has a resolution of fXOSC/2^16 (i.e., approx 397Hz)
     curr_freq := 0
     readreg(core#FREQ2, 3, @curr_freq)
     case freq

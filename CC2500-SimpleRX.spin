@@ -5,7 +5,7 @@
     Description: Simple receive demo of the cc2500 driver
     Copyright (c) 2022
     Started Nov 29, 2020
-    Updated Aug 15, 2022
+    Updated Aug 21, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -18,7 +18,7 @@ CON
     LED             = cfg#LED1
     SER_BAUD        = 115_200
 
-' CC2500 I/O pins
+    { SPI configuration }
     CS_PIN          = 0
     SCK_PIN         = 1
     MOSI_PIN        = 2
@@ -45,7 +45,7 @@ VAR
     byte _recv[MAX_PAYLD]
     byte _pktlen
 
-PUB Main{} | tmp, rxbytes
+PUB main{} | tmp, rxbytes
 
     setup{}
 
@@ -72,28 +72,20 @@ PUB Main{} | tmp, rxbytes
         cc2500.rxpayload(rxbytes, @_pkt_tmp)    ' now, read that many bytes
         cc2500.flushrx{}                        ' flush receive buffer
 
+        { show the packet received as a simple hex dump }
         ser.position(0, 3)
-        ser.printf2(string("Received (%d): %s"), strsize(@_pkt_tmp), @_pkt_tmp)
-        ser.clearline{}
-        ser.newline{}
+        ser.hexdump(@_pkt_tmp, 0, 2, strsize(@_pkt_tmp), 16 <# strsize(@_pkt_tmp))
 
-        repeat tmp from 0 to strsize(@_pkt_tmp)-1' show the packet received as
-            ser.hex(_pkt_tmp[tmp], 2)           '   a simple hex dump
-            ser.char(" ")
-        ser.clearline{}
-        ser.newline{}
+        ser.strln(string("    |  |"))
+        ser.strln(string("    |  *- start of payload/data"))
+        ser.strln(string("    *---- address packet was sent to"))
 
-        ser.strln(string("|  |"))
-        ser.strln(string("|  *- start of payload/data"))
-        ser.strln(string("*---- address packet was sent to"))
-
-PUB Setup{}
+PUB setup{}
 
     ser.start(SER_BAUD)
     time.msleep(30)
     ser.clear{}
     ser.strln(string("Serial terminal started"))
-
     if cc2500.startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN)
         ser.strln(string("CC2500 driver started"))
     else
