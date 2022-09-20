@@ -1,11 +1,11 @@
 {
     --------------------------------------------
-    Filename: wireless.transceiver.cc2500.spi.spin
+    Filename: wireless.transceiver.cc2500.spin
     Author: Jesse Burt
     Description: Driver for TI's CC2500 ISM-band (2.4GHz) transceiver
     Copyright (c) 2022
     Started Jul 7, 2019
-    Updated Feb 9, 2022
+    Updated Sep 20, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -107,10 +107,10 @@ OBJ
     time: "time"
     u64 : "math.unsigned64"
 
-PUB Null{}
+PUB null{}
 ' This is not a top-level object
 
-PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): status
+PUB startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): status
 ' Start using custom I/O settings and 1MHz SPI bus speed
     if lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and {
     } lookdown(MOSI_PIN: 0..31) and lookdown(MISO_PIN: 0..31)
@@ -128,11 +128,12 @@ PUB Startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): status
     ' Lastly - make sure you have at least one free core/cog
     return FALSE
 
-PUB Stop{}
-
+PUB stop{}
+' Stop the driver
     spi.deinit{}
+    _CS := _status := 0
 
-PUB Defaults{}
+PUB defaults{}
 ' Factory default settings
 {'  This is what _would_ be set:
     nodeaddress($00)
@@ -164,24 +165,24 @@ PUB Defaults{}
 }'   but to save code space, we'll just Reset(), instead
     reset{}
 
-PUB PresetFixedPktlen{}
+PUB presetfixedpktlen{}
 ' Like PresetRobust1(), but sets packet length config mode to fixed-length
     presetrobust1{}
     payloadlencfg(PKTLEN_FIXED)
 
-PUB PresetRobust1{}
+PUB presetrobust1{}
 ' Like defaults, but with some basic improvements in robustness:
 ' * check/filter address field in payload (2nd byte), ignore broadcast address
 ' * perform oscillator auto-cal when transitioning from idle to RX or TX
 ' * reject packets with a bad CRC (i.e., flush from receive buffer)
-' * turn off oscillator output on GPIO0 (GDO0)
+' * turn off oscillator output on gpio0 (GDO0)
     reset{}                                     ' start with POR defaults
     addresscheck(ADRCHK_CHK_NO_BCAST)
     autocal(IDLE_RXTX)
     crcautoflush(TRUE)
     gpio0(IO_HI_Z)
 
-PUB AddressCheck(mode): curr_mode
+PUB addresscheck(mode): curr_mode
 ' Enable address checking/matching/filtering
 '   Valid values:
 '      *ADRCHK_NONE (0): No address check
@@ -200,7 +201,7 @@ PUB AddressCheck(mode): curr_mode
     mode := ((curr_mode & core#ADR_CHK_MASK) | mode) & core#PKTCTRL1_MASK
     writereg(core#PKTCTRL1, 1, @mode)
 
-PUB AfterRX(next_state): curr_set
+PUB afterrx(next_state): curr_set
 ' Defines the state the radio transitions to after a packet is successfully received
 '   Valid values:
 '      *RXOFF_IDLE (0) - Idle state
@@ -219,7 +220,7 @@ PUB AfterRX(next_state): curr_set
     next_state := ((curr_set & core#RXOFF_MODE_MASK) | next_state)
     writereg(core#MCSM1, 1, @next_state)
 
-PUB AfterTX(next_state): curr_set
+PUB aftertx(next_state): curr_set
 ' Defines the state the radio transitions to after a packet is successfully transmitted
 '   Valid values:
 '      *TXOFF_IDLE (0) - Idle state
@@ -238,7 +239,7 @@ PUB AfterTX(next_state): curr_set
     next_state := ((curr_set & core#TXOFF_MODE_MASK) | next_state)
     writereg(core#MCSM1, 1, @next_state)
 
-PUB AGCFilterLen(len): curr_len
+PUB agcfilterlen(len): curr_len
 ' For 2FSK, 4FSK, MSK, set averaging length for amplitude from the channel filter, in samples
 ' For OOK/ASK, set decision boundary for reception
 '   Valid values:
@@ -261,7 +262,7 @@ PUB AGCFilterLen(len): curr_len
     len := ((curr_len & core#FILT_LEN_MASK) | len) & core#AGCCTRL0_MASK
     writereg(core#AGCCTRL0, 1, @len)
 
-PUB AGCMode(mode): curr_mode
+PUB agcmode(mode): curr_mode
 ' Set AGC mode
 '   Valid values:
 '      *AGC_NORMAL (0): Always adjust gain when required
@@ -280,7 +281,7 @@ PUB AGCMode(mode): curr_mode
     mode := ((curr_mode & core#AGC_FREEZE_MASK) | mode) & core#AGCCTRL0_MASK
     writereg(core#AGCCTRL0, 1, @mode)
 
-PUB AppendStatus(mode): curr_mode
+PUB appendstatus(mode): curr_mode
 ' Append status bytes to packet payload (RSSI, LQI, CRC OK)
 '   Valid values:
 '      *TRUE (-1 or 1)
@@ -297,7 +298,7 @@ PUB AppendStatus(mode): curr_mode
     mode := ((curr_mode & core#APPEND_STATUS_MASK) | mode) & core#PKTCTRL1_MASK
     writereg(core#PKTCTRL1, 1, @mode)
 
-PUB AutoCal(mode): curr_mode
+PUB autocal(mode): curr_mode
 ' When to perform auto-calibration
 '   Valid values:
 '      *NEVER (0) - Never (manually calibrate)
@@ -315,11 +316,11 @@ PUB AutoCal(mode): curr_mode
     mode := ((curr_mode & core#FS_AUTOCAL_MASK) | mode)
     writereg(core#MCSM0, 1, @mode)
 
-PUB CalFreqSynth{}
+PUB calfreqsynth{}
 ' Calibrate the frequency synthesizer
     writereg(core#CS_SCAL, 0, 0)
 
-PUB CarrierFreq(freq): curr_freq
+PUB carrierfreq(freq): curr_freq
 ' Set carrier/center frequency, in kHz
 '   Valid values:
 '       2_400_000..2_483_500
@@ -337,7 +338,7 @@ PUB CarrierFreq(freq): curr_freq
 
     writereg(core#FREQ2, 3, @freq)
 
-PUB CarrierSense(thresh): curr_thr
+PUB carriersense(thresh): curr_thr
 ' Set relative change threshold for asserting carrier sense, in dB
 '   Valid values:
 '      *0: Disabled
@@ -357,7 +358,7 @@ PUB CarrierSense(thresh): curr_thr
     thresh := ((curr_thr & core#CSENSE_REL_THR_MASK) | thresh) & core#AGCCTRL1_MASK
     writereg(core#AGCCTRL1, 1, @thresh)
 
-PUB CarrierSenseAbs(thresh): curr_thr
+PUB carriersenseabs(thresh): curr_thr
 ' Set absolute change threshold for asserting carrier sense, in dB
 '   Valid values:
 '       %0000..%1111
@@ -374,7 +375,7 @@ PUB CarrierSenseAbs(thresh): curr_thr
     thresh := ((curr_thr & core#CSENSE_ABS_THR_MASK) | thresh) & core#AGCCTRL1_MASK
     writereg(core#AGCCTRL1, 1, @thresh)
 
-PUB Channel(number): curr_chan
+PUB channel(number): curr_chan
 ' Set channel number
 '   Valid values: 0..255
 '   Default value: 0
@@ -390,7 +391,7 @@ PUB Channel(number): curr_chan
     number &= core#CHANNR_MASK
     writereg(core#CHANNR, 1, @number)
 
-PUB ChannelSpacing(width): curr_wid | chanspc_e, chanspc_m
+PUB channelspacing(width): curr_wid | chanspc_e, chanspc_m
 ' Set channel spacing, in Hz
 '   Valid values: 25_390..405_456 (default: 199_951)
 '   Any other value polls the chip and returns the current setting
@@ -413,7 +414,7 @@ PUB ChannelSpacing(width): curr_wid | chanspc_e, chanspc_m
     width.byte[1] := chanspc_m
     writereg(core#MDMCFG1, 2, @width)
 
-PUB CRCCheckEnabled(mode): curr_mode
+PUB crccheckenabled(mode): curr_mode
 ' Enable CRC calc (TX mode) and check (RX mode)
 '   Valid values:
 '      *TRUE (-1 or 1)
@@ -430,7 +431,7 @@ PUB CRCCheckEnabled(mode): curr_mode
     mode := ((curr_mode & core#CRC_EN_MASK) | mode) & core#PKTCTRL0_MASK
     writereg(core#PKTCTRL0, 1, @mode)
 
-PUB CRCAutoFlush(mode): curr_mode
+PUB crcautoflush(mode): curr_mode
 ' Enable automatic flush of RX FIFO when CRC check fails
 '   Valid values:
 '       TRUE (-1 or 1)
@@ -447,11 +448,11 @@ PUB CRCAutoFlush(mode): curr_mode
     mode := ((curr_mode & core#CRC_AUTOFLUSH_MASK) | mode) & core#PKTCTRL1_MASK
     writereg(core#PKTCTRL1, 1, @mode)
 
-PUB CrystalOff{}
+PUB crystaloff{}
 ' Turn off crystal oscillator
     writereg(core#CS_SXOFF, 0, 0)
 
-PUB DataRate(rate): curr_rate | curr_exp, curr_mant, dr_exp, dr_mant
+PUB datarate(rate): curr_rate | curr_exp, curr_mant, dr_exp, dr_mant
 ' Set on-air data rate, in bps
 '   Valid values: 600..500_000
 '   Default value: 115_051
@@ -480,7 +481,7 @@ PUB DataRate(rate): curr_rate | curr_exp, curr_mant, dr_exp, dr_mant
     writereg(core#MDMCFG4, 1, @curr_exp)
     writereg(core#MDMCFG3, 1, @dr_mant)
 
-PUB DataWhitening(mode): curr_mode
+PUB datawhitening(mode): curr_mode
 ' Enable data whitening
 '   Valid values: *TRUE (-1 or 1), FALSE (0)
 '   Any other value polls the chip and returns the current setting
@@ -496,7 +497,7 @@ PUB DataWhitening(mode): curr_mode
     mode := ((curr_mode & core#WHITE_DATA_MASK) | mode)
     writereg(core#PKTCTRL0, 1, @mode)
 
-PUB DCBlock(mode): curr_mode
+PUB dcblock(mode): curr_mode
 ' Enable digital DC blocking filter (before demod)
 '   Valid values: *TRUE (-1 or 1), FALSE
 '   Any other value polls the chip and returns the current setting
@@ -513,13 +514,13 @@ PUB DCBlock(mode): curr_mode
     mode := ((curr_mode & core#DCFILT_OFF_MASK) | mode)
     writereg(core#MDMCFG2, 1, @mode)
 
-PUB DeviceID{}: id
+PUB deviceid{}: id
 ' Chip version number
 '   Returns: $03
 '   NOTE: Datasheet states this value is subject to change without notice
     readreg(core#VERSION, 1, @id)
 
-PUB DVGAGain(gain): curr_gain
+PUB dvgagain(gain): curr_gain
 ' Set Digital Variable Gain Amplifier gain maximum level
 '   Valid values:
 '       *0 - Highest gain setting
@@ -539,7 +540,7 @@ PUB DVGAGain(gain): curr_gain
     gain := ((curr_gain & core#MAX_DVGA_GAIN_MASK) | gain)
     writereg(core#AGCCTRL2, 1, @gain)
 
-PUB FEC(mode): curr_mode
+PUB fec(mode): curr_mode
 ' Enable forward error correction with interleaving
 '   Valid values: TRUE (-1 or 1), *FALSE (0)
 '   Any other value polls the chip and returns the current setting
@@ -555,27 +556,27 @@ PUB FEC(mode): curr_mode
     mode := ((curr_mode & core#FEC_EN_MASK) | mode) & core#MDMCFG1_MASK
     writereg(core#MDMCFG1, 1, @mode)
 
-PUB FIFORXBytes{}: nr_bytes
+PUB fiforxbytes{}: nr_bytes
 ' Returns number of bytes in RX FIFO
 ' NOTE: The MSB indicates if the RX FIFO has overflowed.
     nr_bytes := 0
     readreg(core#RXBYTES, 1, @nr_bytes)
 
-PUB FIFOTXBytes{}: nr_bytes
+PUB fifotxbytes{}: nr_bytes
 ' Returns number of bytes in TX FIFO
 ' NOTE: The MSB indicates if the TX FIFO is underflowed.
     nr_bytes := 0
     readreg(core#TXBYTES, 1, @nr_bytes)
 
-PUB FlushRX{}
+PUB flushrx{}
 ' Flush receive FIFO/buffer
     writereg(core#CS_SFRX, 0, 0)
 
-PUB FlushTX{}
+PUB flushtx{}
 ' Flush transmit FIFO/buffer
     writereg(core#CS_SFTX, 0, 0)
 
-PUB FreqDeviation(freq): curr_freq | tmp, deviat_m, deviat_e, tmp_m
+PUB freqdeviation(freq): curr_freq | tmp, deviat_m, deviat_e, tmp_m
 ' Set frequency deviation from carrier, in Hz
 '   Valid values:
 '       1_586..380_859
@@ -601,11 +602,11 @@ PUB FreqDeviation(freq): curr_freq | tmp, deviat_m, deviat_e, tmp_m
     freq &= core#DEVIATN_MASK
     writereg(core#DEVIATN, 1, @freq)
 
-PUB FSTX{}  'XXX review: name (API change)
+PUB fstx{}  'XXX review: name (API change)
 ' Enable frequency synthesizer and calibrate
     writereg(core#CS_SFSTXON, 0, 0)
 
-PUB GPIO0(mode): curr_mode 'XXX review: consolidation with other like methods? (API change)
+PUB gpio0(mode): curr_mode 'XXX review: consolidation with other like methods? (API change)
 ' Configure test signal output on GDO0 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F (see IO_* constants near top of this file)
 '   Default value: $3F
@@ -624,7 +625,7 @@ PUB GPIO0(mode): curr_mode 'XXX review: consolidation with other like methods? (
     mode := ((curr_mode & core#GDO0_CFG_MASK) | mode)
     writereg(core#IOCFG0, 1, @mode)
 
-PUB GPIO1(mode): curr_mode
+PUB gpio1(mode): curr_mode
 ' Configure test signal output on GDO1 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F
 '   Any other value polls the chip and returns the current setting
@@ -641,7 +642,7 @@ PUB GPIO1(mode): curr_mode
     mode := ((curr_mode & core#GDO1_CFG_MASK) | mode)
     writereg(core#IOCFG1, 1, @mode)
 
-PUB GPIO2(mode): curr_mode
+PUB gpio2(mode): curr_mode
 ' Configure test signal output on GDO2 pin
 '   Valid values: $00..$0F, $16..$17, $1B..$1D, $24..$39, $41, $43, $46..$3F
 '   Any other value polls the chip and returns the current setting
@@ -657,11 +658,11 @@ PUB GPIO2(mode): curr_mode
     mode := ((curr_mode & core#GDO2_CFG_MASK) | mode)
     writereg(core#IOCFG2, 1, @mode)
 
-PUB Idle{}
+PUB idle{}
 ' Change chip state to IDLE
     writereg(core#CS_SIDLE, 0, 0)
 
-PUB IntFreq(freq): curr_freq
+PUB intfreq(freq): curr_freq
 ' Intermediate Frequency (IF), in Hz
 '   Valid values: 25_390..787_109 (result will be rounded to the nearest 5-bit result)
 '   Default value: 380_859
@@ -676,13 +677,13 @@ PUB IntFreq(freq): curr_freq
 
     writereg(core#FSCTRL1, 1, @freq)
 
-PUB LastCRCGood{}: flag
+PUB lastcrcgood{}: flag
 ' Flag indicating CRC of last reception matched
 '   Returns: TRUE (-1) if comparison matched, FALSE (0) otherwise
     readreg(core#LQI, 1, @flag)
     return ((flag >> core#CRC_OK) & 1) == 1
 
-PUB LNAGain(gain): curr_gain
+PUB lnagain(gain): curr_gain
 ' Set maximum LNA+LNA2 gain (relative to maximum possible gain)
 '   Valid values:
 '       *0 - Maximum possible LNA+LNA2 gain
@@ -706,7 +707,7 @@ PUB LNAGain(gain): curr_gain
     gain := ((curr_gain & core#MAX_LNA_GAIN_MASK) | gain)
     writereg(core#AGCCTRL2, 1, @gain)
 
-PUB MagnTarget(val): curr_val
+PUB magntarget(val): curr_val
 ' Set target value for averaged amplitude from digital channel filter, in dB
 '   Valid values:
 '       24, 27, 30, *33, 36, 38, 40, 42
@@ -723,7 +724,7 @@ PUB MagnTarget(val): curr_val
     val := ((curr_val & core#MAGN_TARGET_MASK) | val)
     writereg(core#AGCCTRL2, 1, @val)
 
-PUB ManchesterEnc(mode): curr_mode
+PUB manchesterenc(mode): curr_mode
 ' Enable Manchester encoding/decoding
 '   Valid values: TRUE (-1 or 1), *FALSE (0)
 '   Any other value polls the chip and returns the current setting
@@ -738,7 +739,7 @@ PUB ManchesterEnc(mode): curr_mode
     mode := ((curr_mode & core#MANCHST_EN_MASK) | mode)
     writereg(core#MDMCFG2, 1, @mode)
 
-PUB Modulation(mode): curr_mode
+PUB modulation(mode): curr_mode
 ' Set modulation of transmitted or expected signal
 '   Valid values:
 '      *FSK2 (%000): 2-level or binary Frequency Shift-Keyed
@@ -759,7 +760,7 @@ PUB Modulation(mode): curr_mode
     mode := ((curr_mode & core#MOD_FORMAT_MASK) | mode)
     writereg(core#MDMCFG2, 1, @mode)
 
-PUB NodeAddress(addr): curr_addr
+PUB nodeaddress(addr): curr_addr
 ' Set address used for packet filtration
 '   Valid values: $00..$FF (000-255)
 '   Default value: $00
@@ -775,22 +776,22 @@ PUB NodeAddress(addr): curr_addr
     addr &= core#ADDR_MASK
     writereg(core#ADDR, 1, @addr)
 
-PUB PARead(ptr_buff)
+PUB paread(ptr_buff)
 ' Read PA table into ptr_buff
 '   NOTE: ptr_buff must be at least 8 bytes in length
     readreg(core#PATABLE | core#BURST, 8, ptr_buff)
 
-PUB PartNumber{}: pn
+PUB partnumber{}: pn
 ' Part number of device
 '   Returns: $00
     readreg(core#PARTNUM, 1, @pn)
 
-PUB PAWrite(ptr_buff)
+PUB pawrite(ptr_buff)
 ' Write 8-byte PA table from ptr_buff
 '   NOTE: Table will be written starting at index 0 from the LSB of ptr_buff
     writereg(core#PATABLE | core#BURST, 8, ptr_buff)
 
-PUB PayloadLen(length): curr_len
+PUB payloadlen(length): curr_len
 ' Set payload length, when using fixed payload length mode,
 '   or maximum payload length when using variable payload length mode.
 '   Valid values: 1..*255
@@ -805,7 +806,7 @@ PUB PayloadLen(length): curr_len
 
     writereg(core#PKTLEN, 1, @length)
 
-PUB PayloadLenCfg(mode): curr_mode
+PUB payloadlencfg(mode): curr_mode
 ' Set payload length mode
 '   Valid values:
 '       PKTLEN_FIXED (0): Fixed payload length mode. Set length with PayloadLen
@@ -822,13 +823,13 @@ PUB PayloadLenCfg(mode): curr_mode
     mode := ((curr_mode & core#LEN_CFG_MASK) | mode) & core#PKTCTRL0_MASK
     writereg(core#PKTCTRL0, 1, @mode)
 
-PUB PLLLocked{}: flag
+PUB plllocked{}: flag
 ' Flag indicating PLL is locked
 '   Returns: TRUE (-1) if locked, FALSE otherwise
     readreg(core#FSCAL1, 1, @flag)
     return (flag <> $3F)
 
-PUB PreambleLen(len): curr_len
+PUB preamblelen(len): curr_len
 ' Set number of preamble bytes
 '   Valid values: 2, 3, *4, 6, 8, 12, 16, 24
 '   Any other value polls the chip and returns the current setting
@@ -844,7 +845,7 @@ PUB PreambleLen(len): curr_len
     len := ((curr_len & core#NUM_PREAMBLE_MASK) | len)
     writereg(core#MDMCFG1, 1, @len)
 
-PUB PreambleQual(thresh): curr_thr
+PUB preamblequal(thresh): curr_thr
 ' Set Preamble quality estimator thresh
 '   Valid values: *0, 4, 8, 12, 16, 20, 24, 28
 '   NOTE: If 0, the sync word is always accepted.
@@ -861,19 +862,19 @@ PUB PreambleQual(thresh): curr_thr
     thresh := ((curr_thr & core#PQT_MASK) | thresh) & core#PKTCTRL1_MASK
     writereg(core#PKTCTRL1, 1, @thresh)
 
-PUB Reset{}
+PUB reset{}
 ' Reset the chip
     writereg(core#CS_SRES, 0, 0)
     time.msleep(5)
 
-PUB RSSI{}: level
+PUB rssi{}: level
 ' Received Signal Strength Indicator
 '   Returns: Signal strength seen by transceiver, in dBm
     level := 0
     readreg(core#RSSI, 1, @level)
     level := (~level / 2) - 74
 
-PUB RXBandwidth(width): curr_wid
+PUB rxbandwidth(width): curr_wid
 ' Set receiver channel filter bandwidth, in kHz
 '   Valid values: 812, 650, 541, 464, 406, 325, 270, 232, *203, 162, 135, 116, 102, 81, 68, 58
 '   Any other value polls the chip and returns the current setting
@@ -892,7 +893,7 @@ PUB RXBandwidth(width): curr_wid
     width := ((curr_wid & core#CHANBW_MASK) | width)
     writereg(core#MDMCFG4, 1, @width)
 
-PUB RXFIFOThresh(thresh): curr_thr
+PUB rxfifothresh(thresh): curr_thr
 ' Set receive FIFO thresh, in bytes
 '   The threshold is exceeded when the number of bytes in the FIFO is greater
 '       than or equal to this value.
@@ -910,27 +911,27 @@ PUB RXFIFOThresh(thresh): curr_thr
     thresh := ((curr_thr & core#FIFO_THR_MASK) | thresh) & core#FIFOTHR_MASK
     writereg(core#FIFOTHR, 1, @thresh)
 
-PUB RXMode{}
+PUB rxmode{}
 ' Change chip state to RX (receive)
     writereg(core#CS_SRX, 0, 0)
 
-PUB RXPayload(nr_bytes, ptr_buff)
+PUB rxpayload(nr_bytes, ptr_buff)
 ' Read data queued in the RX FIFO
 '   nr_bytes Valid values: 1..64
 '   Any other value is ignored
 '   NOTE: Ensure buffer at address ptr_buff is at least as big as the number of bytes you're reading
     readreg(core#FIFO, nr_bytes, ptr_buff)
 
-PUB Sleep{}
+PUB sleep{}
 ' Power down chip
     writereg(core#CS_SPWD, 0, 0)
 
-PUB State{}: curr_state
+PUB state{}: curr_state
 ' Read state-machine register
     curr_state := 0
     readreg(core#MARCSTATE, 1, @curr_state)
 
-PUB SyncMode(mode): curr_mode
+PUB syncmode(mode): curr_mode
 ' Set sync-word qualifier mode
 '   Valid values:
 '       SYNCMODE_NONE (0): Ignore preamble, syncword and carrier level
@@ -959,7 +960,7 @@ PUB SyncMode(mode): curr_mode
     mode := ((curr_mode & core#SYNC_MODE_MASK) | mode) & core#MDMCFG2_MASK
     writereg(core#MDMCFG2, 1, @mode)
 
-PUB SyncWord(sync_word): curr_word
+PUB syncword(sync_word): curr_word
 ' Set transmitted (TX) or expected (RX) sync word
 '   Valid values: $0000..$FFFF
 '   Default value: $D391
@@ -973,17 +974,17 @@ PUB SyncWord(sync_word): curr_word
 
     writereg(core#SYNC1, 2, @sync_word)
 
-PUB TXMode{}
+PUB txmode{}
 ' Change chip state to TX (transmit)
     writereg(core#CS_STX, 0, 0)
 
-PUB TXPayload(nr_bytes, ptr_buff)
+PUB txpayload(nr_bytes, ptr_buff)
 ' Queue data to transmit in the TX FIFO
 '   nr_bytes Valid values: 1..64
 '   Any other value is ignored
     writereg(core#FIFO, nr_bytes, ptr_buff)
 
-PUB TXPower(pwr): curr_pwr
+PUB txpower(pwr): curr_pwr
 ' Set transmit power, in dBm
 '   Valid values: -55, -30, -28, -26, -24, -22, -20, -18, -16, -14, -12, -10,
 '        -8, -6, -4, -2, 0, 1
@@ -1005,7 +1006,7 @@ PUB TXPower(pwr): curr_pwr
 
     writereg(core#PATABLE, 1, @pwr)
 
-PUB TXPowerIndex(idx): curr_idx
+PUB txpowerindex(idx): curr_idx
 ' Set index within PA table to write TX power to (used for FSK power ramping, or ASK shaping)
 '   Valid values: 0..1
 '   Any other value polls the chip and returns the current setting
@@ -1021,11 +1022,11 @@ PUB TXPowerIndex(idx): curr_idx
     curr_idx := ((curr_idx & core#PA_PWR_MASK) | idx)
     writereg(core#FREND0, 1, @curr_idx)
 
-PUB WOR{}
+PUB wor{}
 ' Change chip state to WOR (Wake-on-Radio)
     writereg(core#CS_SWOR, 0, 0)
 
-PRI getStatus{}: curr_status
+PRI getstatus{}: curr_status
 ' Read the status byte
     writereg(core#CS_SNOP, 0, 0)
     return _status
@@ -1042,7 +1043,7 @@ PRI log2(num): l2
         FALSE:
     return
 
-PUB readReg(reg_nr, nr_bytes, ptr_buff) | i
+PRI readreg(reg_nr, nr_bytes, ptr_buff)
 ' Read nr_bytes from device into ptr_buff
     case reg_nr
         core#IOCFG2..core#TEST0, core#PATABLE:  ' Config. regs
@@ -1072,7 +1073,7 @@ PUB readReg(reg_nr, nr_bytes, ptr_buff) | i
     spi.rdblock_msbf(ptr_buff, nr_bytes)
     outa[_CS] := 1
 
-PRI writeReg(reg_nr, nr_bytes, ptr_buff) | tmp
+PRI writereg(reg_nr, nr_bytes, ptr_buff)
 ' Write nr_bytes to device from ptr_buff
     case reg_nr
         core#IOCFG2..core#TEST0, core#PATABLE:  ' Config. regs
@@ -1112,24 +1113,21 @@ PRI writeReg(reg_nr, nr_bytes, ptr_buff) | tmp
 
 DAT
 {
-TERMS OF USE: MIT License
+Copyright 2022 Jesse Burt
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 }
 
