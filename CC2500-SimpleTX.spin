@@ -52,8 +52,8 @@ PUB main{} | counter, i, pktlen
 
     _user_str := string("TEST")                 ' any string up to 251 bytes
 
-    cc2500.presetrobust1{}                      ' use preset settings
-    cc2500.carrierfreq(2_401_000)               ' freq. to transmit on
+    cc2500.preset_robust1{}                     ' use preset settings
+    cc2500.carrier_freq(2_401_000)              ' freq. to transmit on
     ' transmit power levels:
     ' -55, -30, -28, -26, -24, -22, -20, -18, -16, -14, -12, -10, -8, -6, -4,
     ' -2, 0, 1
@@ -61,11 +61,11 @@ PUB main{} | counter, i, pktlen
         otherwise the actual radiated power may be unusably low and your receiver may not see it.
         If the module has a 'pEN' (or similar) pin, pull it high.
         (see the instructions for your specific module ) }
-    cc2500.txpower(1)
+    cc2500.tx_pwr(1)
 
     ser.clear{}
     ser.position(0, 0)
-    ser.printf1(string("Transmit mode - %dkHz\n\r"), cc2500.carrierfreq(-2))
+    ser.printf1(string("Transmit mode - %dkHz\n\r"), cc2500.carrier_freq(-2))
 
     counter := 0
     repeat
@@ -89,9 +89,9 @@ PUB main{} | counter, i, pktlen
         ser.strln(string("    |  *---- node address to transmit to"))
         ser.strln(string("    *------- length of payload (including address byte)"))
 
-        cc2500.flushtx{}                        ' flush transmit buffer
-        cc2500.txmode{}                         ' set to transmit mode
-        cc2500.txpayload(pktlen+1, @_pkt_tmp)   ' transmit the data
+        cc2500.flush_tx{}                       ' flush transmit buffer
+        cc2500.tx_mode{}                        ' set to transmit mode
+        cc2500.tx_payld(pktlen+1, @_pkt_tmp)    ' transmit the data
 
         time.msleep(1_000)                      ' delay between packets to
                                                 '   avoid abusing the airwaves
