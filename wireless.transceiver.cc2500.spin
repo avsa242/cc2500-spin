@@ -150,18 +150,18 @@ PUB defaults{}
     gpio0(IO_CLK_XODIV192)
     gpio1(IO_HI_Z)
     gpio2(IO_CHIP_RDYn)
-    int_freq(381)
-    manchester_enc(FALSE)
+    interm_freq(381)
+    manchest_enc_ena(FALSE)
     modulation(FSK2)
     payld_len(255)
     payld_len_cfg(PKTLEN_VAR)
     preamble_len(2)
     preamble_qual(0)
-    rx_bandw(203)
+    rx_bw(203)
     rx_fifo_thresh(32)
-    sync_mode(SYNCMODE_1616)
-    sync_word($D391)
-    data_whitening(TRUE)
+    syncwd_mode(SYNCMODE_1616)
+    syncwd($D391)
+    data_whiten_ena(TRUE)
 }'   but to save code space, we'll just reset(), instead
     reset{}
 
@@ -481,7 +481,7 @@ PUB data_rate(rate): curr_rate | curr_exp, curr_mant, dr_exp, dr_mant
     writereg(core#MDMCFG4, 1, @curr_exp)
     writereg(core#MDMCFG3, 1, @dr_mant)
 
-PUB data_whitening(mode): curr_mode
+PUB data_whiten_ena(mode): curr_mode
 ' Enable data whitening
 '   Valid values: *TRUE (-1 or 1), FALSE (0)
 '   Any other value polls the chip and returns the current setting
@@ -662,7 +662,7 @@ PUB idle{}
 ' Change chip state to IDLE
     writereg(core#CS_SIDLE, 0, 0)
 
-PUB int_freq(freq): curr_freq
+PUB interm_freq(freq): curr_freq
 ' Intermediate Frequency (IF), in Hz
 '   Valid values: 25_390..787_109 (result will be rounded to the nearest 5-bit result)
 '   Default value: 380_859
@@ -724,7 +724,7 @@ PUB magn_target(val): curr_val
     val := ((curr_val & core#MAGN_TARGET_MASK) | val)
     writereg(core#AGCCTRL2, 1, @val)
 
-PUB manchester_enc(mode): curr_mode
+PUB manchest_enc_ena(mode): curr_mode
 ' Enable Manchester encoding/decoding
 '   Valid values: TRUE (-1 or 1), *FALSE (0)
 '   Any other value polls the chip and returns the current setting
@@ -874,7 +874,7 @@ PUB rssi{}: level
     readreg(core#RSSI, 1, @level)
     level := (~level / 2) - 74
 
-PUB rx_bandw(width): curr_wid
+PUB rx_bw(width): curr_wid
 ' Set receiver channel filter bandwidth, in kHz
 '   Valid values: 812, 650, 541, 464, 406, 325, 270, 232, *203, 162, 135, 116, 102, 81, 68, 58
 '   Any other value polls the chip and returns the current setting
@@ -931,25 +931,25 @@ PUB state{}: curr_state
     curr_state := 0
     readreg(core#MARCSTATE, 1, @curr_state)
 
-PUB sync_mode(mode): curr_mode
+PUB syncwd_mode(mode): curr_mode
 ' Set sync-word qualifier mode
 '   Valid values:
-'       SYNCMODE_NONE (0): Ignore preamble, sync_word and carrier level
-'       SYNCMODE_1516 (1): 15 of 16 sync_word bits must match
-'      *SYNCMODE_1616 (2): 16 of 16 sync_word bits must match
-'       SYNCMODE_3032 (3): 30 of 32 sync_word bits must match
-'       SYNCMODE_CS_ONLY (4): Ignore preamble and sync_word,
+'       SYNCMODE_NONE (0): Ignore preamble, sync-word and carrier level
+'       SYNCMODE_1516 (1): 15 of 16 sync-word bits must match
+'      *SYNCMODE_1616 (2): 16 of 16 sync-word bits must match
+'       SYNCMODE_3032 (3): 30 of 32 sync-word bits must match
+'       SYNCMODE_CS_ONLY (4): Ignore preamble and sync-word,
 '           but carrier must be above threshold
-'       SYNCMODE_1516_CS (5): 15 of 16 sync_word bits must match,
+'       SYNCMODE_1516_CS (5): 15 of 16 sync-word bits must match,
 '           and carrier must be above threshold
-'       SYNCMODE_1616_CS (6): 16 of 16 sync_word bits must match,
+'       SYNCMODE_1616_CS (6): 16 of 16 sync-word bits must match,
 '           and carrier must be above threshold
-'       SYNCMODE_3032_CS (7): 30 of 32 sync_word bits must match,
+'       SYNCMODE_3032_CS (7): 30 of 32 sync-word bits must match,
 '           and carrier must be above threshold
 '   Any other value polls the chip and returns the current setting
-'   NOTE: A 32-bit sync_word can be emulated by setting this method to
-'       SYNCMODE_3032 or SYNCMODE_3032_CS. In these cases, the sync_word
-'       specified by SyncWord() will be transmitted twice.
+'   NOTE: A 32-bit sync-word can be emulated by setting this method to
+'       SYNCMODE_3032 or SYNCMODE_3032_CS. In these cases, the sync-word
+'       specified by syncwd() will be transmitted twice.
     curr_mode := 0
     readreg(core#MDMCFG2, 1, @curr_mode)
     case mode
@@ -960,19 +960,19 @@ PUB sync_mode(mode): curr_mode
     mode := ((curr_mode & core#SYNC_MODE_MASK) | mode) & core#MDMCFG2_MASK
     writereg(core#MDMCFG2, 1, @mode)
 
-PUB sync_word(sync_word): curr_word
+PUB syncwd(syncwd): curr_word
 ' Set transmitted (TX) or expected (RX) sync word
 '   Valid values: $0000..$FFFF
 '   Default value: $D391
 '   Any other value polls the chip and returns the current setting
     curr_word := 0
     readreg(core#SYNC1, 2, @curr_word)
-    case sync_word
+    case syncwd
         $0000..$FFFF:
         other:
             return curr_word
 
-    writereg(core#SYNC1, 2, @sync_word)
+    writereg(core#SYNC1, 2, @syncwd)
 
 PUB tx_mode{}
 ' Change chip state to TX (transmit)
