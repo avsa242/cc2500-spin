@@ -5,7 +5,7 @@
     Description: Simple transmit demo of the cc2500 driver
     Copyright (c) 2022
     Started Nov 29, 2020
-    Updated Aug 21, 2022
+    Updated Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -36,7 +36,7 @@ CON
 OBJ
 
     ser     : "com.serial.terminal.ansi"
-    cfg     : "core.con.boardcfg.flip"
+    cfg     : "boardcfg.flip"
     time    : "time"
     cc2500  : "wireless.transceiver.cc2500"
     str     : "string"
