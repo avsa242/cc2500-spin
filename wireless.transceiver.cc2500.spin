@@ -5,7 +5,7 @@
     Description: Driver for TI's CC2500 ISM-band (2.4GHz) transceiver
     Copyright (c) 2022
     Started Jul 7, 2019
-    Updated Nov 12, 2022
+    Updated Nov 13, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -160,7 +160,7 @@ PUB defaults{}
     rx_bw(203)
     rx_fifo_thresh(32)
     syncwd_mode(SYNCMODE_1616)
-    syncwd($D391)
+    set_syncwd($D391)
     data_whiten_ena(TRUE)
 }'   but to save code space, we'll just reset(), instead
     reset{}
@@ -788,8 +788,9 @@ PUB payld_len(length): curr_len
 PUB payld_len_cfg(mode): curr_mode
 ' Set payload length mode
 '   Valid values:
-'       PKTLEN_FIXED (0): Fixed payload length mode. Set length with PayloadLen
-'      *PKTLEN_VAR (1): Variable payload length mode. Payload length set by first byte after sync word
+'       PKTLEN_FIXED (0): Fixed payload length mode. Payload length is set by payld_len()
+'      *PKTLEN_VAR (1): Variable payload length mode. Payload length is set by first byte of
+'           payload data (default)
 '       PKTLEN_INF (2): Infinite payload length mode.
 '   Any other value polls the chip and returns the current setting
     curr_mode := 0
@@ -870,6 +871,7 @@ PUB rssi{}: level
     readreg(core#RSSI, 1, @level)
     level := (~level / 2) - 74
 
+PUB rx_bandwidth = rx_bw
 PUB rx_bw(width): curr_wid
 ' Set receiver channel filter bandwidth, in kHz
 '   Valid values: 812, 650, 541, 464, 406, 325, 270, 232, *203, 162, 135, 116, 102, 81, 68, 58
@@ -956,19 +958,16 @@ PUB syncwd_mode(mode): curr_mode
     mode := ((curr_mode & core#SYNC_MODE_MASK) | mode) & core#MDMCFG2_MASK
     writereg(core#MDMCFG2, 1, @mode)
 
-PUB syncwd(syncwd): curr_word
-' Set transmitted (TX) or expected (RX) sync word
-'   Valid values: $0000..$FFFF
-'   Default value: $D391
-'   Any other value polls the chip and returns the current setting
-    curr_word := 0
-    readreg(core#SYNC1, 2, @curr_word)
-    case syncwd
-        $0000..$FFFF:
-        other:
-            return curr_word
+PUB set_syncwd(ptr_syncwd)
+' Set transmitted (TX) or expected (RX) syncword
+'   ptr_syncwd: pointer to syncword data
+'   Valid values: $0000..$FFFF (default: $D391)
+    writereg(core#SYNC1, 2, ptr_syncwd)
 
-    writereg(core#SYNC1, 2, @syncwd)
+PUB syncwd(ptr_syncwd)
+' Get current syncword
+'   ptr_syncwd: pointer to copy syncword data to
+    readreg(core#SYNC1, 2, ptr_syncwd)
 
 PUB tx_mode{}
 ' Change chip state to TX (transmit)
