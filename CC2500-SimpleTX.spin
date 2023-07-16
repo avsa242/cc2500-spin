@@ -15,15 +15,7 @@ CON
     _xinfreq        = cfg#_xinfreq
 
 ' -- User-modifiable constants
-    LED             = cfg#LED1
     SER_BAUD        = 115_200
-
-    { SPI configuration }
-    CS_PIN          = 0
-    SCK_PIN         = 1
-    MOSI_PIN        = 2
-    MISO_PIN        = 3
-
     TO_NODE         = $01                       ' address to send to (01..FE)
 ' --
 
@@ -39,7 +31,8 @@ OBJ
     cfg:    "boardcfg.flip"
     time:   "time"
     str:    "string"
-    cc2500: "wireless.transceiver.cc2500" | PPB = 0 { optional CC2500 crystal offset correction }
+    cc2500: "wireless.transceiver.cc2500" | PPB=0, CS=0, SCK=1, MOSI=2, MISO=3
+    ' PPB: optional CC2500 crystal offset correction
 
 VAR
 
@@ -103,7 +96,7 @@ PUB setup{}
     ser.clear{}
     ser.strln(string("Serial terminal started"))
 
-    if cc2500.startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN)
+    if ( cc2500.start() )
         ser.strln(string("CC2500 driver started"))
     else
         ser.strln(string("CC2500 driver failed to start - halting"))

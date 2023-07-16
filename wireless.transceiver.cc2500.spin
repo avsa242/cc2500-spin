@@ -5,7 +5,7 @@
     Description: Driver for TI's CC2500 ISM-band (2.4GHz) transceiver
     Copyright (c) 2023
     Started Jul 7, 2019
-    Updated Apr 22, 2023
+    Updated Jul 16, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -113,6 +113,12 @@ CON
     AGC_FREEZE_A_AUTO_D     = %10
     AGC_OFF                 = %11
 
+    { default I/O configuration }
+    CS                      = 0
+    SCK                     = 1
+    MOSI                    = 2
+    MISO                    = 3
+
 VAR
 
     byte _CS
@@ -133,17 +139,21 @@ OBJ
 PUB null{}
 ' This is not a top-level object
 
+PUB start{}: status
+' Start using default I/O settings
+    return startx(CS, SCK, MOSI, MISO)
+
 PUB startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): status
 ' Start using custom I/O settings and 1MHz SPI bus speed
-    if (lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and lookdown(MOSI_PIN: 0..31) {
-}   and lookdown(MISO_PIN: 0..31))
-        if (status := spi.init(SCK_PIN, MOSI_PIN, MISO_PIN, core#SPI_MODE))
+    if ( lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and lookdown(MOSI_PIN: 0..31) and ...
+        lookdown(MISO_PIN: 0..31) )
+        if ( status := spi.init(SCK_PIN, MOSI_PIN, MISO_PIN, core#SPI_MODE) )
             time.usleep(core#T_POR)
             _CS := CS_PIN
 
             outa[_CS] := 1
             dira[_CS] := 1
-            if (dev_id{} == $03)
+            if ( dev_id{} == core.DEVID_RESP )
                 reset{}
                 return
     ' if this point is reached, something above failed
@@ -154,6 +164,7 @@ PUB startx(CS_PIN, SCK_PIN, MOSI_PIN, MISO_PIN): status
 PUB stop{}
 ' Stop the driver
     spi.deinit{}
+    dira[_CS] := 0
     _CS := _status := 0
 
 PUB defaults{}
