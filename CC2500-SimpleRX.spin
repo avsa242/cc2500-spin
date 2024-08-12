@@ -1,21 +1,21 @@
 {
-    --------------------------------------------
-    Filename: CC2500-SimpleRX.spin
-    Author: Jesse Burt
-    Description: Simple receive demo of the cc2500 driver
-    Copyright (c) 2023
-    Started Nov 29, 2020
-    Updated Jul 16, 2023
-    See end of file for terms of use.
-    --------------------------------------------
+----------------------------------------------------------------------------------------------------
+    Filename:       CC2500-SimpleRX.spin
+    Description:    Demo of the CC2500 driver
+        * receive mode
+    Author:         Jesse Burt
+    Started:        Nov 29, 2020
+    Updated:        Aug 11, 2024
+    Copyright (c) 2024 - See end of file for terms of use.
+----------------------------------------------------------------------------------------------------
 }
+
 CON
 
-    _clkmode        = cfg#_clkmode
-    _xinfreq        = cfg#_xinfreq
+    _clkmode        = cfg._clkmode
+    _xinfreq        = cfg._xinfreq
 
 ' -- User-modifiable constants
-    SER_BAUD        = 115_200
     NODE_ADDRESS    = $01                       ' this node's address (1..254)
 ' --
 
@@ -23,14 +23,16 @@ CON
     POS_PAYLD       = 1
     MAX_PAYLD       = 255
 
+
 OBJ
 
-    ser:    "com.serial.terminal.ansi"
     cfg:    "boardcfg.flip"
     time:   "time"
     str:    "string"
-    cc2500: "wireless.transceiver.cc2500" | PPB=0, CS=0, SCK=1, MOSI=2, MISO=3
+    ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
+    cc2500: "wireless.transceiver.cc2500" | CS=0, SCK=1, MOSI=2, MISO=3, PPB=0
     ' PPB: optional CC2500 crystal offset correction
+
 
 VAR
 
@@ -38,56 +40,60 @@ VAR
     byte _recv[MAX_PAYLD]
     byte _pktlen
 
-PUB main{} | tmp, rxbytes
 
-    setup{}
+PUB main() | tmp, rxbytes
 
-    cc2500.preset_robust1{}                     ' use preset settings
+    setup()
+
+    cc2500.preset_robust1()                     ' use preset settings
     cc2500.carrier_freq(2_401_000)              ' set carrier frequency
     cc2500.node_addr(NODE_ADDRESS)              ' this node's address
 
-    ser.clear{}
+    ser.clear()
     ser.pos_xy(0, 0)
-    ser.printf1(string("Receive mode - %dkHz\n\r"), cc2500.carrier_freq(-2))
+    ser.printf1(@"Receive mode - %dkHz\n\r", cc2500.carrier_freq())
 
     repeat
         bytefill(@_pkt_tmp, $00, MAX_PAYLD)     ' clear out buffers 
         bytefill(@_recv, $00, MAX_PAYLD)
 
-        cc2500.rx_mode{}                        ' set to receive mode
-        repeat until cc2500.fifo_rx_bytes{} => 1' wait for first recv'd bytes
+        cc2500.rx_mode()                        ' set to receive mode
+        repeat until cc2500.fifo_rx_bytes() => 1' wait for first recv'd bytes
         cc2500.rx_payld(1, @rxbytes)            ' get length of recv'd payload
                                                 ' (1st byte of packet in
                                                 '   default variable-length
                                                 '   packet mode)
 
-        repeat until cc2500.fifo_rx_bytes{} => rxbytes
+        repeat until cc2500.fifo_rx_bytes() => rxbytes
         cc2500.rx_payld(rxbytes, @_pkt_tmp)     ' now, read that many bytes
-        cc2500.flush_rx{}                       ' flush receive buffer
+        cc2500.flush_rx()                       ' flush receive buffer
 
         { show the packet received as a simple hex dump }
         ser.pos_xy(0, 3)
         ser.hexdump(@_pkt_tmp, 0, 2, strsize(@_pkt_tmp), 16 <# strsize(@_pkt_tmp))
 
-        ser.strln(string("    |  |"))
-        ser.strln(string("    |  *- start of payload/data"))
-        ser.strln(string("    *---- address packet was sent to"))
+        ser.strln(@"    |  |")
+        ser.strln(@"    |  *- start of payload/data")
+        ser.strln(@"    *---- address packet was sent to")
 
-PUB setup{}
 
-    ser.start(SER_BAUD)
+PUB setup()
+
+    ser.start()
     time.msleep(30)
-    ser.clear{}
-    ser.strln(string("Serial terminal started"))
+    ser.clear()
+    ser.strln(@"Serial terminal started")
+
     if ( cc2500.start() )
-        ser.strln(string("CC2500 driver started"))
+        ser.strln(@"CC2500 driver started")
     else
-        ser.strln(string("CC2500 driver failed to start - halting"))
+        ser.strln(@"CC2500 driver failed to start - halting")
         repeat
+
 
 DAT
 {
-Copyright 2023 Jesse Burt
+Copyright 2024 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

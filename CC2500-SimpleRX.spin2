@@ -15,7 +15,6 @@ CON
     _xtlfreq        = cfg._xtlfreq
 
 ' -- User-modifiable constants
-    SER_BAUD        = 2_000_000
     NODE_ADDRESS    = $01                       ' this node's address (1..254)
 ' --
 
@@ -23,19 +22,22 @@ CON
     POS_PAYLD       = 1
     MAX_PAYLD       = 255
 
+
 OBJ
 
-    ser:    "com.serial.terminal.ansi"
     cfg:    "boardcfg.p2eval"
     str:    "string"
-    cc2500: "wireless.transceiver.cc2500" | PPB=0, CS=0, SCK=1, MOSI=2, MISO=3, SPI_FREQ=6_500_000
+    ser:    "com.serial.terminal.ansi" | SER_BAUD=2_000_000
+    cc2500: "wireless.transceiver.cc2500" | CS=0, SCK=1, MOSI=2, MISO=3, SPI_FREQ=6_500_000, PPB=0
     ' PPB: optional CC2500 crystal offset correction
+
 
 VAR
 
     byte _pkt_tmp[MAX_PAYLD]
     byte _recv[MAX_PAYLD]
     byte _pktlen
+
 
 PUB main() | tmp, rxbytes
 
@@ -71,9 +73,10 @@ PUB main() | tmp, rxbytes
         ser.strln(@"    |  *- start of payload/data")
         ser.strln(@"    *---- address packet was sent to")
 
+
 PUB setup()
 
-    ser.start(SER_BAUD)
+    ser.start()
     ser.clear()
     ser.strln(@"Serial terminal started")
 
@@ -83,9 +86,10 @@ PUB setup()
         ser.strln(@"CC2500 driver failed to start - halting")
         repeat
 
+
 DAT
 {
-Copyright 2023 Jesse Burt
+Copyright 2024 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
