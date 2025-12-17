@@ -57,6 +57,7 @@ PUB main() | tmp, rxbytes
 
         cc2500.rx_mode()                        ' set to receive mode
         repeat until cc2500.fifo_rx_bytes() >= 1' wait for first recv'd bytes
+        rxbytes := 0
         cc2500.rx_payld(1, @rxbytes)            ' get length of recv'd payload
                                                 ' (1st byte of packet in
                                                 '   default variable-length
