@@ -1,19 +1,19 @@
 {
 ----------------------------------------------------------------------------------------------------
-    Filename:       CC2500-SimpleTX.spin
+    Filename:       CC2500-SimpleTX.spin2
     Description:    Demo of the CC2500 driver
         * transmit mode
     Author:         Jesse Burt
     Started:        Nov 29, 2020
-    Updated:        Aug 11, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Dec 17, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
 CON
 
-    _clkfreq        = cfg._clkfreq_def
-    _xtlfreq        = cfg._xtlfreq
+    _clkfreq        = 180_000_000
+    _xtlfreq        = 20_000_000
 
 ' -- User-modifiable constants
     TO_NODE         = $01                       ' address to send to (01..FE)
@@ -27,7 +27,6 @@ CON
 
 OBJ
 
-    cfg:    "boardcfg.p2eval"
     str:    "string"
     ser:    "com.serial.terminal.ansi" | SER_BAUD=2_000_000
     cc2500: "wireless.transceiver.cc2500" | CS=0, SCK=1, MOSI=2, MISO=3, SPI_FREQ=6_500_000, PPB=0
@@ -104,7 +103,7 @@ PUB setup()
 
 DAT
 {
-Copyright 2023 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

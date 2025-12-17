@@ -5,15 +5,15 @@
         * receive mode
     Author:         Jesse Burt
     Started:        Nov 29, 2020
-    Updated:        Aug 11, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Dec 17, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
 CON
 
-    _clkmode        = cfg._clkmode
-    _xinfreq        = cfg._xinfreq
+    _clkmode        = xtal1+pll16x
+    _xinfreq        = 5_000_000
 
 ' -- User-modifiable constants
     NODE_ADDRESS    = $01                       ' this node's address (1..254)
@@ -26,7 +26,6 @@ CON
 
 OBJ
 
-    cfg:    "boardcfg.flip"
     time:   "time"
     str:    "string"
     ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
@@ -51,7 +50,7 @@ PUB main() | tmp, rxbytes
 
     ser.clear()
     ser.pos_xy(0, 0)
-    ser.printf1(@"Receive mode - %dkHz\n\r", cc2500.carrier_freq())
+    ser.printf(@"Receive mode - %dkHz\n\r", cc2500.carrier_freq())
 
     repeat
         bytefill(@_pkt_tmp, $00, MAX_PAYLD)     ' clear out buffers 
@@ -93,7 +92,7 @@ PUB setup()
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

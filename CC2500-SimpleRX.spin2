@@ -1,18 +1,19 @@
 {
-    --------------------------------------------
-    Filename: CC2500-SimpleRX.spin2
-    Author: Jesse Burt
-    Description: Simple receive demo of the cc2500 driver (P2 version)
-    Copyright (c) 2023
-    Started Nov 29, 2020
-    Updated Jul 16, 2023
-    See end of file for terms of use.
-    --------------------------------------------
+----------------------------------------------------------------------------------------------------
+    Filename:       CC2500-SimpleRX.spin2
+    Description:    Demo of the CC2500 driver
+        * receive mode
+    Author:         Jesse Burt
+    Started:        Nov 29, 2020
+    Updated:        Dec 17, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
+----------------------------------------------------------------------------------------------------
 }
+
 CON
 
-    _clkfreq        = cfg._clkfreq_def
-    _xtlfreq        = cfg._xtlfreq
+    _clkfreq        = 180_000_000
+    _xtlfreq        = 20_000_000
 
 ' -- User-modifiable constants
     NODE_ADDRESS    = $01                       ' this node's address (1..254)
@@ -25,7 +26,6 @@ CON
 
 OBJ
 
-    cfg:    "boardcfg.p2eval"
     str:    "string"
     ser:    "com.serial.terminal.ansi" | SER_BAUD=2_000_000
     cc2500: "wireless.transceiver.cc2500" | CS=0, SCK=1, MOSI=2, MISO=3, SPI_FREQ=6_500_000, PPB=0
@@ -89,7 +89,7 @@ PUB setup()
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

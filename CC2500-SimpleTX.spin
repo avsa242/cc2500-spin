@@ -5,15 +5,15 @@
         * transmit mode
     Author:         Jesse Burt
     Started:        Nov 29, 2020
-    Updated:        Aug 11, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Dec 17, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
 CON
 
-    _clkmode        = cfg._clkmode
-    _xinfreq        = cfg._xinfreq
+    _clkmode        = xtal1+pll16x
+    _xinfreq        = 5_000_000
 
 ' -- User-modifiable constants
     TO_NODE         = $01                       ' address to send to (01..FE)
@@ -27,7 +27,6 @@ CON
 
 OBJ
 
-    cfg:    "boardcfg.flip"
     time:   "time"
     str:    "string"
     ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
@@ -59,7 +58,7 @@ PUB main() | counter, i, pktlen
 
     ser.clear()
     ser.pos_xy(0, 0)
-    ser.printf1(@"Transmit mode - %dkHz\n\r", cc2500.carrier_freq())
+    ser.printf(@"Transmit mode - %dkHz\n\r", cc2500.carrier_freq())
 
     counter := 0
     repeat
@@ -74,7 +73,7 @@ PUB main() | counter, i, pktlen
         _pkt_tmp[POS_TONODE] := TO_NODE         ' 2nd byte is destination addr
 
         ser.pos_xy(0, 3)
-        ser.printf2(@"Sending (%d): %s\n\r", pktlen, @_pkt_tmp[POS_PAYLD])
+        ser.printf(@"Sending (%d): %s\n\r", pktlen, @_pkt_tmp[POS_PAYLD])
 
         { show hexdump of the packet, including non-payload data (length) }
         ser.hexdump(@_pkt_tmp, 0, 2, (pktlen+1), 16 <# (pktlen+1))
@@ -105,7 +104,7 @@ PUB setup()
 
 DAT
 {
-Copyright 2023 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
