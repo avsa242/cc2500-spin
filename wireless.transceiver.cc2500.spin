@@ -428,9 +428,9 @@ PUB crc_check_ena(md=-2): c
 '       FALSE (0):      disable
 '       other values:   returns the current setting
     c := readreg(core.PKTCTRL0)
-    case ||(md)
+    case abs(md)
         0, 1:
-            md := ||(md) << core.CRC_EN
+            md := abs(md) << core.CRC_EN
             md := ((c & core.CRC_EN_MASK) | md) & core.PKTCTRL0_MASK
             writereg(core.PKTCTRL0, md)
         other:
@@ -444,9 +444,9 @@ PUB crc_auto_flush_ena(e=-2): c
 '       FALSE (0):      disable (default)
 '       other values:   returns the current setting
     c := readreg(core.PKTCTRL1)
-    case ||(e)
+    case abs(e)
         0, 1:
-            e := ||(e) << core.CRC_AUTOFLUSH
+            e := abs(e) << core.CRC_AUTOFLUSH
             e := ((c & core.CRC_AUTOFLUSH_MASK) | e) & core.PKTCTRL1_MASK
             writereg(core.PKTCTRL1, e)
         other:
@@ -492,9 +492,9 @@ PUB data_whiten_ena(e=-2): c
 '       other values:   returns the current setting
 '   NOTE: Applies to all data, except the preamble and sync word.
     c := readreg(core.PKTCTRL0)
-    case ||(e)
+    case abs(e)
         0, 1:
-            e := ||(e) << core.WHITE_DATA
+            e := abs(e) << core.WHITE_DATA
             e := ((c & core.WHITE_DATA_MASK) | e)
             writereg(core.PKTCTRL0, e)
         other:
@@ -510,7 +510,7 @@ PUB dc_block_ena(e=-2): c
 '   NOTE: Enable for better sensitivity (default).
 '       Disable for optimizing current usage. Only for data rates 250kBaud and lower
     c := readreg(core.MDMCFG2)
-    case e := ||(e)
+    case e := abs(e)
         0, 1:
             e := ((e ^ 1) << core.DCFILT_OFF)
             e := ((c & core.DCFILT_OFF_MASK) | e)
@@ -537,7 +537,7 @@ PUB dvga_gain(g=-2): c
     c := readreg(core.AGCCTRL2)
     case g
         -3..0:
-            g := ||(g) << core.MAX_DVGA_GAIN
+            g := abs(g) << core.MAX_DVGA_GAIN
             g := ((c & core.MAX_DVGA_GAIN_MASK) | g)
             writereg(core.AGCCTRL2, g)
         other:
@@ -553,9 +553,9 @@ PUB fec_ena(md=-2): c
 '       other values:   returns the current setting
 '   NOTE: Only supported when payld_len_cfg() == PKTLEN_FIXED
     c := readreg(core.MDMCFG1)
-    case ||(md)
+    case abs(md)
         0, 1:
-            md := ||(md) << core.FEC_EN
+            md := abs(md) << core.FEC_EN
             md := ((c & core.FEC_EN_MASK) | md) & core.MDMCFG1_MASK
             writereg(core.MDMCFG1, md)
         other:
@@ -741,9 +741,9 @@ PUB manchest_enc_ena(e=-2): c
 '       FALSE (0):      disabled (default)
 '       other values:   returns the current setting
     c := readreg(core.MDMCFG2)
-    case ||(e)
+    case abs(e)
         0, 1:
-            e := ||(e) << core.MANCHST_EN
+            e := abs(e) << core.MANCHST_EN
             e := ((c & core.MANCHST_EN_MASK) | e)
             writereg(core.MDMCFG2, e)
         other:
@@ -842,9 +842,9 @@ PUB payld_status_ena(md=-2): c
 '       FALSE (0):      disabled
 '       other values:   returns the current setting
     c := readreg(core.PKTCTRL1)
-    case ||(md)
+    case abs(md)
         0, 1:
-            md := ||(md) << core.APPEND_STATUS
+            md := abs(md) << core.APPEND_STATUS
             md := ((c & core.APPEND_STATUS_MASK) | md) & core.PKTCTRL1_MASK
             writereg(core.PKTCTRL1, md)
         other:
